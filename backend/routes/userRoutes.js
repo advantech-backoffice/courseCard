@@ -7,6 +7,8 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "pokemon";
 
 router.get("/", async (req, res) => {
+  console.log('here');
+  
   try {
     const users = await User.find().select("-password");
     res.json(users);

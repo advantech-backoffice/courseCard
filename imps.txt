@@ -1,0 +1,3 @@
+mongodb+srv://advantechbackoffice_db_user:password@advantechcoursecard.m0kvber.mongodb.net/?appName=AdvantechCourseCard   
+advantechbackoffice_db_user
+prasad@123
