@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://coursecard.vercel.app/api/';
+export const API_BASE_URL = 'https://coursecard.vercel.app/api';
 
 export const ROUTES = {
   HOME: '/',
