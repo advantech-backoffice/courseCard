@@ -32,7 +32,7 @@ export default function StudentDashboard() {
       {/* HEADER */}
       <div>
         <h2 className="text-3xl font-bold">
-          Hello, {user?.username.split(" ")[0]}!
+          Hello, {user?.name?.split(" ")[0] || 'Learner'}!
         </h2>
         <p className="text-zinc-500 mt-1">
           Ready to continue your learning journey?
@@ -61,12 +61,20 @@ export default function StudentDashboard() {
                   <BookOpen className="w-6 h-6" />
                 </div>
 
-                {course.progress === 100 && (
-                  <div className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold flex items-center">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Completed
-                  </div>
-                )}
+                <div className="flex flex-col items-end gap-2">
+                  {course.progress === 100 && (
+                    <div className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Completed
+                    </div>
+                  )}
+                  {course.isOverdue && (
+                    <div className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      Overdue
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* TITLE */}
@@ -88,7 +96,6 @@ export default function StudentDashboard() {
 
                 <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
                   <div style={{ width: `${course.progress}%` }} className="bg-indigo-600 h-3 transition-all duration-500" />
-                  {course.progress === 100 && <div>Completed</div>}
                 </div>
               </div>
 

@@ -9,19 +9,38 @@ const JWT_SECRET = process.env.JWT_SECRET || 'pokemon';
 
 // Register a new user
 router.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, role } = req.body;
+    console.log(username, email, password, role);
+    
     try {
         const existingUser = await User.findOne({ email });
+
         if (existingUser) {
-            return res.status(400).json({ message: 'Email already in use' });
-        }   
+            return res.status(400).json({
+                message: 'Email already in use'
+            });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, email, password: hashedPassword });
+
+        const newUser = new User({
+            name: username,
+            email,
+            password: hashedPassword,
+            role
+        });
+
         await newUser.save();
-        res.status(201).json({ message: 'User registered successfully' });
+
+        res.status(201).json({
+            message: 'User registered successfully'
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Server error: '+error.message });
-    }   
+        res.status(500).json({
+            message: 'Server error: ' + error.message
+        });
+    }
 });
 
 // admin login user
@@ -37,7 +56,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
         const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-        const userObj = { _id: user._id, username: user.username, email: user.email, role: user.role };
+        const userObj = { _id: user._id, name: user.name, email: user.email, role: user.role };
         res.status(200).json({ message: 'Login successful', token, user: userObj });
     } catch (error) {
         res.status(500).json({ message: 'Server error: '+error.message });
@@ -60,7 +79,7 @@ router.post('/student-login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
         const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-        const userObj = { _id: user._id, username: user.username, email: user.email, role: user.role };
+        const userObj = { _id: user._id, name: user.name, email: user.email, role: user.role };
         res.status(200).json({ message: 'Student login successful', token, user: userObj });
     } catch (error) {
         res.status(500).json({ message: 'Server error: '+error.message });
@@ -84,7 +103,7 @@ router.post('/teacher-login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
         const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-        const userObj = { _id: user._id, username: user.username, email: user.email, role: user.role };
+        const userObj = { _id: user._id, name: user.name, email: user.email, role: user.role };
         res.status(200).json({ message: 'Teacher login successful', token, user: userObj });
     } catch (error) {
         res.status(500).json({ message: 'Server error: '+error.message });

@@ -34,7 +34,8 @@ export default function TeacherStudentDetail() {
       (p) => p.courseId.toString() === courseId.toString()
     );
     if (!progressData) return false;
-    return progressData.topicComplted.includes(`${moduleId}-${topicName}`);
+    const topicKey = `${moduleId}-${topicName}`;
+    return progressData.completedTopics?.some(t => t.topicKey === topicKey) || false;
   };
 
   if (loading) return <div className="p-10">Loading...</div>;

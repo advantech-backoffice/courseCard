@@ -1,7 +1,84 @@
 import express from 'express';
 import Course from '../models/Courses.js';
+import multer from 'multer';
+import xlsx from 'xlsx';
+import fs from 'fs';
 
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
+
+// Excel Upload Route
+router.post('/upload-excel', upload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "Please upload a file" });
+    }
+
+    const workbook = xlsx.readFile(file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    // Flexible column mapping
+    const coursesMap = {};
+
+    data.forEach(row => {
+      // Support both Title/Module/Topic and course_name/module_name/module_content
+      const name = row.course_name || row.Title;
+      const desc = row.course_description || row.Description || "";
+      const modName = row.module_name || row.Module;
+      const content = row.module_content || row.Topic;
+      const months = row.Months || row.Duration || 1;
+
+      if (!name || !modName) return;
+
+      if (!coursesMap[name]) {
+        const endDate = new Date();
+        const numMonths = parseInt(months) || 1;
+        endDate.setMonth(endDate.getMonth() + numMonths);
+
+        coursesMap[name] = {
+          course_name: name,
+          course_description: desc,
+          modules: [],
+          endDate: endDate
+        };
+      }
+
+      let moduleEntry = coursesMap[name].modules.find(m => m.module_name === modName);
+      if (!moduleEntry) {
+        moduleEntry = { module_name: modName, module_content: [] };
+        coursesMap[name].modules.push(moduleEntry);
+      }
+
+      if (content) {
+        // Handle comma-separated topics or single topic per row
+        const topics = String(content).split(/[;,]+/).map(t => t.trim()).filter(Boolean);
+        moduleEntry.module_content.push(...topics);
+      }
+    });
+
+    const coursesToInsert = Object.values(coursesMap);
+    
+    // Remove duplicates within module_content
+    coursesToInsert.forEach(course => {
+      course.modules.forEach(mod => {
+        mod.module_content = [...new Set(mod.module_content)];
+      });
+    });
+
+    await Course.insertMany(coursesToInsert);
+
+    // Clean up uploaded file
+    fs.unlinkSync(file.path);
+
+    res.json({ message: "Courses uploaded successfully", count: coursesToInsert.length });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Course routes
 router.get('/', async (req, res) => {

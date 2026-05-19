@@ -32,6 +32,7 @@ export default function AdminCourses() {
       .then((data) => {
         setCourses(data);
         setIsLoading(false);
+        console.log("courses",data);
       });
   };
 
@@ -44,124 +45,52 @@ export default function AdminCourses() {
     setShowModal(true);
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsImporting(true);
-    setImportStatus({ type: "info", message: "Reading Excel file..." });
+    setImportStatus({ type: "info", message: "Uploading Excel file..." });
 
-    const reader = new FileReader();
+    const formData = new FormData();
+    formData.append("file", file);
 
-    reader.onload = async (evt) => {
-      try {
-        const binary = evt.target.result;
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses/upload-excel`, {
+        method: "POST",
+        body: formData,
+      });
 
-        const workbook = XLSX.read(binary, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
+      const result = await response.json();
 
-        const rows = XLSX.utils.sheet_to_json(sheet);
-
-        if (!rows.length) throw new Error("Excel file is empty");
-
-        // 🔥 GROUP DATA INTO YOUR SCHEMA FORMAT
-        const courseMap = new Map();
-
-        rows.forEach((row) => {
-          const courseId = Number(row.course_id);
-
-          if (!courseMap.has(courseId)) {
-            courseMap.set(courseId, {
-              course_id: courseId,
-              course_name: String(row.course_name || ""),
-              course_description: String(row.course_description || ""),
-              modules: [],
-            });
-          }
-
-          const course = courseMap.get(courseId);
-
-          // ----- MODULE -----
-          if (row.module_id) {
-            const moduleId = Number(row.module_id);
-
-            let module = course.modules.find((m) => m.module_id === moduleId);
-
-            if (!module) {
-              module = {
-                module_id: moduleId,
-                module_name: String(row.module_name || ""),
-                module_content: [],
-              };
-
-              course.modules.push(module);
-            }
-
-            // ----- MODULE CONTENT -----
-            if (row.module_content) {
-              const contentArray = String(row.module_content)
-                .split(";")
-                .map((item) => item.trim())
-                .filter(Boolean);
-
-              module.module_content.push(...contentArray);
-            }
-          }
-        });
-
-        const finalCourses = Array.from(courseMap.values());
-
-        setImportStatus({
-          type: "info",
-          message: `Uploading ${finalCourses.length} courses...`,
-        });
-
-        // 🔥 SEND TO BACKEND
-        const response = await fetch(`${API_BASE_URL}/courses/bulk`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(finalCourses),
-        });
-
-        const resultText = await response.text();
-
-        if (!response.ok) {
-          throw new Error(resultText || "Server error");
-        }
-
-        setImportStatus({
-          type: "success",
-          message: `Successfully imported ${finalCourses.length} courses!`,
-        });
-
-        fetchCourses();
-      } catch (err) {
-        console.error(err);
-
-        setImportStatus({
-          type: "error",
-          message: "Import failed: " + err.message,
-        });
-      } finally {
-        setIsImporting(false);
-
-        if (fileInputRef.current) fileInputRef.current.value = "";
-
-        setTimeout(() => setImportStatus(null), 5000);
+      if (!response.ok) {
+        throw new Error(result.message || "Server error");
       }
-    };
 
-    reader.readAsBinaryString(file);
+      setImportStatus({
+        type: "success",
+        message: `Successfully imported ${result.count} courses!`,
+      });
+
+      fetchCourses();
+    } catch (err) {
+      console.error(err);
+      setImportStatus({
+        type: "error",
+        message: "Import failed: " + err.message,
+      });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setTimeout(() => setImportStatus(null), 5000);
+    }
   };
 
   const filteredCourses = courses.filter(
     (course) =>
-      course.course_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.course_description
-        .toLowerCase()
+      course.course_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase()),
   );
 
@@ -437,7 +366,6 @@ export default function AdminCourses() {
           </button>
         </div>
       </div>
-
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -497,7 +425,7 @@ export default function AdminCourses() {
                       <div className="flex items-center text-sm">
                         <Layers className="w-4 h-4 mr-2 text-zinc-400" />
                         <span className="font-medium">
-                          {course.modulesCount} Modules
+                          {course.modules?.length || 0} Modules
                         </span>
                       </div>
                     </td>

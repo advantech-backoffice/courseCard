@@ -15,7 +15,7 @@ export default function AdminUsers() {
     username: '',
     email: '',
     password: '',
-    role: 'student'
+    role: ''
   });
 
   // 🔄 Load Users
@@ -23,6 +23,7 @@ export default function AdminUsers() {
     fetch(`${API_BASE_URL}/users`)
       .then(res => res.json())
       .then(data => {
+        data = data.filter((user)=>{return user.role != "admin"})
         setUsers(data);
         setIsLoading(false);
       });
@@ -34,8 +35,8 @@ export default function AdminUsers() {
 
   // 🔎 Filter Users
   const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // 📝 Handle Form Change
@@ -45,6 +46,13 @@ export default function AdminUsers() {
 
   // ➕ ADD USER
   const handleAddUser = async () => {
+    console.log(formData);
+    
+    if (!formData.username || !formData.email || !formData.password || !formData.role) {
+      alert('Please fill out all fields, including role.');
+      return;
+    }
+
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,14 +62,20 @@ export default function AdminUsers() {
     if (res.ok) {
       fetchUsers();
       setShowAddModal(false);
-      setFormData({ username: '', email: '', password: '', role: 'student' });
+      setFormData({ username: '', email: '', password: '', role: '' });
     } else {
-      alert('Error creating user');
+      const errorData = await res.json().catch(() => ({}));
+      alert(`Error creating user: ${errorData.message || 'Unknown error'}`);
     }
   };
 
   // ✏️ EDIT USER
   const handleEditUser = async () => {
+    if (!formData.username || !formData.email || !formData.role) {
+      alert('Please fill out name, email, and role.');
+      return;
+    }
+
     const res = await fetch(`${API_BASE_URL}/users/${editingUser._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -72,7 +86,8 @@ export default function AdminUsers() {
       fetchUsers();
       setEditingUser(null);
     } else {
-      alert('Error updating user');
+      const errorData = await res.json().catch(() => ({}));
+      alert(`Error updating user: ${errorData.message || 'Unknown error'}`);
     }
   };
 
@@ -132,7 +147,15 @@ export default function AdminUsers() {
         <tbody>
           {isLoading ? (
             <tr><td className="p-6">Loading...</td></tr>
-          ) : filteredUsers.map(user => (
+          ) : filteredUsers.length == 0 ?
+             <tr className="border-b dark:border-zinc-800">
+
+              <td className="p-4" colSpan={3}>
+                No Records
+              </td>
+            </tr>
+          :
+          filteredUsers.map(user => (
             <tr key={user._id} className="border-b dark:border-zinc-800">
 
               <td className="p-4">
@@ -159,7 +182,8 @@ export default function AdminUsers() {
               </td>
 
             </tr>
-          ))}
+          ))
+        }
         </tbody>
       </table>
 
@@ -233,16 +257,46 @@ function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword 
           />
         )}
 
-        <select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg"
-        >
-          <option className='bg-indigo-400' value="student">Student</option>
-          <option className='bg-indigo-400' value="teacher">Teacher</option>
-          <option className='bg-indigo-400' value="admin">Admin</option>
-        </select>
+        <div className="w-full border p-3 rounded-lg">
+          <div className="text-sm font-medium mb-2">Select Role</div>
+          <div className="flex items-center space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="role"
+                value="student"
+                checked={formData.role === 'student'}
+                onChange={handleChange}
+                className="w-4 h-4"
+              />
+              <span className="ml-2">Student</span>
+            </label>
+
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="role"
+                value="teacher"
+                checked={formData.role === 'teacher'}
+                onChange={handleChange}
+                className="w-4 h-4"
+              />
+              <span className="ml-2">Teacher</span>
+            </label>
+
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                checked={formData.role === 'admin'}
+                onChange={handleChange}
+                className="w-4 h-4"
+              />
+              <span className="ml-2">Admin</span>
+            </label>
+          </div>
+        </div>
 
         <button
           onClick={onSubmit}

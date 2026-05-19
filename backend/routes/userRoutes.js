@@ -7,8 +7,6 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "pokemon";
 
 router.get("/", async (req, res) => {
-  console.log('here');
-  
   try {
     const users = await User.find().select("-password");
     res.json(users);
@@ -116,7 +114,7 @@ router.post('/student/complete-topic', async (req, res) => {
     if (!progressEntry) {
       user.progress.push({
         courseId,
-        topicComplted: [],
+        completedTopics: [],
         progressPercentage: 0
       });
       progressEntry = user.progress[user.progress.length - 1];
@@ -125,12 +123,15 @@ router.post('/student/complete-topic', async (req, res) => {
     const topicKey = `${moduleId}-${topicName}`;
 
     // Add topic only if not already completed
-    if (!progressEntry.topicComplted.includes(topicKey)) {
-      progressEntry.topicComplted.push(topicKey);
+    if (!progressEntry.completedTopics.some(t => t.topicKey === topicKey)) {
+      progressEntry.completedTopics.push({
+        topicKey,
+        completedAt: new Date()
+      });
     }
 
     // Calculate new percentage
-    const completedCount = progressEntry.topicComplted.length;
+    const completedCount = progressEntry.completedTopics.length;
     progressEntry.progressPercentage = Math.round(
       (completedCount / totalTopics) * 100
     );
@@ -139,7 +140,8 @@ router.post('/student/complete-topic', async (req, res) => {
 
     res.json({
       message: 'Topic marked as completed',
-      progress: progressEntry.progressPercentage
+      progress: progressEntry.progressPercentage,
+      completedAt: progressEntry.completedTopics.find(t => t.topicKey === topicKey).completedAt
     });
 
   } catch (error) {
@@ -184,7 +186,19 @@ router.get("/student/:id/courses", async (req, res) => {
       _id: { $in: student.assignedCourses },
     });
 
-    res.json(courses);
+    const coursesWithStatus = courses.map(course => {
+      const progress = student.progress.find(p => p.courseId.toString() === course._id.toString());
+      const isCompleted = progress && progress.progressPercentage === 100;
+      const isOverdue = !isCompleted && new Date(course.endDate) < new Date();
+      
+      return {
+        ...course.toObject(),
+        isOverdue,
+        progress: progress ? progress.progressPercentage : 0
+      };
+    });
+
+    res.json(coursesWithStatus);
   } catch (error) {
     res.status(500).json({
       message: "Server error: " + error.message,
@@ -225,12 +239,16 @@ router.get("/student/:id", async (req, res) => {
         0
       );
 
-      const completedTopics = progressData?.topicComplted?.length || 0;
-      const progress = totalTopics ? Math.round((completedTopics / totalTopics) * 100) : 0;
+      const completedTopicsCount = progressData?.completedTopics?.length || 0;
+      const progress = totalTopics ? Math.round((completedTopicsCount / totalTopics) * 100) : 0;
       
+      const isOverdue = progress < 100 && new Date(course.endDate) < new Date();
+
       return {
         ...course.toObject(),
         progress,
+        isOverdue,
+        completedTopics: progressData?.completedTopics || []
       };
     });
 

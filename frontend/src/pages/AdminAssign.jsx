@@ -111,7 +111,7 @@ export default function AdminAssign() {
                 <option value="">Choose a student...</option>
                 {students.map((s) => (
                   <option key={s._id} value={s._id}>
-                    {s.username} ({s.email})
+                    {s.name} ({s.email})
                   </option>
                 ))}
               </select>
@@ -165,7 +165,7 @@ export default function AdminAssign() {
                 <option value="">Choose teacher...</option>
                 {teachers.map((t) => (
                   <option key={t._id} value={t._id}>
-                    {t.username}
+                    {t.name}
                   </option>
                 ))}
               </select>
@@ -180,7 +180,7 @@ export default function AdminAssign() {
                 <option value="">Choose student...</option>
                 {students.map((s) => (
                   <option key={s._id} value={s._id}>
-                    {s.username}
+                    {s.name}
                   </option>
                 ))}
               </select>

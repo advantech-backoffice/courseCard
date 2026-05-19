@@ -38,7 +38,7 @@ export default function CourseDetail() {
         );
 
         if (progressData) {
-          setUserProgress(progressData.topicComplted || []);          
+          setUserProgress(progressData.completedTopics || []);          
         } else {
           setUserProgress([]);
         }
@@ -56,7 +56,7 @@ export default function CourseDetail() {
   const markTopicCompleted = async (moduleId, topicName) => {
     const topicKey = `${moduleId}-${topicName}`;
 
-    if (userProgress.includes(topicKey)) return;
+    if (userProgress.some(t => t.topicKey === topicKey)) return;
 
     try {
       const res = await fetch(
@@ -74,9 +74,10 @@ export default function CourseDetail() {
       );
 
       if (!res.ok) throw new Error("Failed to update progress");
+      const data = await res.json();
 
       // Update UI immediately
-      setUserProgress((prev) => [...prev, topicKey]);
+      setUserProgress((prev) => [...prev, { topicKey, completedAt: data.completedAt }]);
     } catch (err) {
       console.error(err);
     }
@@ -98,6 +99,8 @@ export default function CourseDetail() {
     (userProgress.length / totalTopics) * 100
   );
 
+  const isOverdue = progress < 100 && new Date(course.endDate) < new Date();
+
   return (
     <div className="space-y-8">
 
@@ -111,20 +114,28 @@ export default function CourseDetail() {
       </button>
 
       {/* ===== COURSE HEADER ===== */}
-      <div className="bg-zinc-900 rounded-3xl border p-8 shadow-sm space-y-4">
+      <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-8 shadow-sm space-y-4">
 
-        <h1 className="text-4xl font-bold">{course.course_name}</h1>
+        <div className="flex justify-between items-start">
+          <h1 className="text-4xl font-bold text-white">{course.course_name}</h1>
+          {isOverdue && (
+            <div className="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-1.5 rounded-full text-xs font-bold flex items-center">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              COURSE OVERDUE
+            </div>
+          )}
+        </div>
 
         <p className="text-zinc-500">{course.course_description}</p>
 
         {/* ===== PROGRESS BAR ===== */}
         <div>
           <div className="flex justify-between mb-2 text-sm font-medium">
-            <span>Course Progress</span>
-            <span>{progress}%</span>
+            <span className="text-zinc-400">Course Progress</span>
+            <span className="text-white">{progress}%</span>
           </div>
 
-          <div className="w-full bg-zinc-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
             <div
               className="bg-indigo-600 h-3 transition-all duration-500"
               style={{ width: `${progress}%` }}
@@ -137,33 +148,34 @@ export default function CourseDetail() {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold px-2">Course Modules</h2>
 
-        {course.modules?.map((module) => {
-          const isOpen = openModule === module.module_id;
+        {course.modules?.map((module, index) => {
+          const moduleId = module.module_name || index;
+          const isOpen = openModule === moduleId;
 
           return (
             <div
-              key={module.module_id}
-              className="rounded-2xl border bg-zinc-900 overflow-hidden"
+              key={index}
+              className="rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden"
             >
               {/* ===== MODULE HEADER ===== */}
               <button
                 onClick={() =>
-                  setOpenModule(isOpen ? null : module.module_id)
+                  setOpenModule(isOpen ? null : moduleId)
                 }
-                className="w-full flex items-center justify-between p-5 bg-zinc-900"
+                className="w-full flex items-center justify-between p-5 bg-zinc-900 hover:bg-zinc-800/50 transition-colors"
               >
                 <div className="flex items-center">
 
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-zinc-100 text-indigo-500">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-zinc-800 text-indigo-500">
                     <PlayCircle className="w-5 h-5" />
                   </div>
 
                   <div className="text-left">
-                    <span className="text-xs font-bold text-zinc-400 uppercase">
-                      Module {module.module_id}
+                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                      Module {index + 1}
                     </span>
 
-                    <h4 className="font-bold">
+                    <h4 className="font-bold text-white">
                       {module.module_name}
                     </h4>
                   </div>
@@ -171,53 +183,60 @@ export default function CourseDetail() {
 
                 <ChevronRight
                   className={`w-5 h-5 transition-transform ${
-                    isOpen ? "rotate-90 text-indigo-500" : "text-zinc-400"
+                    isOpen ? "rotate-90 text-indigo-500" : "text-zinc-500"
                   }`}
                 />
               </button>
 
               {/* ===== TOPICS ===== */}
               {isOpen && (
-                <div className="px-8 pb-6 pt-2 border-t bg-zinc-900">
+                <div className="px-8 pb-6 pt-2 border-t border-zinc-800 bg-zinc-900">
                   <ul className="space-y-2">
 
-                    {module.module_content?.map((topic, index) => {
-                      const topicKey = `${module.module_id}-${topic}`;
-                      const isCompleted =
-                        userProgress.includes(topicKey);
+                    {module.module_content?.map((topic, tIndex) => {
+                      const topicKey = `${module.module_name}-${topic}`;
+                      const completionData = userProgress.find(t => t.topicKey === topicKey);
+                      const isCompleted = !!completionData;
+
                       return (
                         <li
-                          key={index}
+                          key={tIndex}
                           onClick={() =>
                             markTopicCompleted(
-                              module.module_id,
+                              module.module_name,
                               topic
                             )
                           }
-                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition
+                          className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition
                           ${
                             isCompleted
-                              ? "bg-green-50 text-green-600"
-                              : ""
+                              ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                              : "hover:bg-zinc-800 text-zinc-300 border border-transparent"
                           }`}
                         >
-                          <span className="flex items-center">
-
+                          <div className="flex items-center">
                             {isCompleted ? (
-                              <CheckCircle className="w-4 h-4 mr-3 text-green-500" />
+                              <CheckCircle className="w-5 h-5 mr-3 text-emerald-500" />
                             ) : (
-                              <span className="mr-3 w-2 h-2 rounded-full bg-indigo-400" />
+                              <div className="mr-3 w-5 h-5 rounded-full border-2 border-zinc-700" />
                             )}
 
-                            {topic}
-                          </span>
+                            <div>
+                                <p className="font-medium">{topic}</p>
+                                {isCompleted && (
+                                    <p className="text-[10px] text-emerald-600/70">
+                                        Completed on {new Date(completionData.completedAt).toLocaleDateString()}
+                                    </p>
+                                )}
+                            </div>
+                          </div>
 
                           {isCompleted ? (
-                            <span className="text-xs font-semibold">
-                              Completed
+                            <span className="text-xs font-bold uppercase tracking-widest opacity-80">
+                              DONE
                             </span>
                           ) : (
-                            <Clock className="w-4 h-4 text-zinc-400" />
+                            <Clock className="w-4 h-4 text-zinc-500" />
                           )}
                         </li>
                       );
