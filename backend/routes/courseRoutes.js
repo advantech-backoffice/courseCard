@@ -42,6 +42,7 @@ router.post('/upload-excel', upload.single('file'), async (req, res) => {
           course_name: name,
           course_description: desc,
           modules: [],
+          total_duration: `${numMonths} Month${numMonths > 1 ? 's' : ''}`,
           endDate: endDate
         };
       }

@@ -42,22 +42,37 @@ export default function LoginPage({ role }) {
   };
 
 
-  const roleColors = {
-    admin: 'indigo',
-    teacher: 'emerald',
-    student: 'violet',
+  const colorStyles = {
+    admin: {
+      bg: 'bg-indigo-600',
+      text: 'text-indigo-600',
+      hover: 'hover:bg-indigo-700',
+      shadow: 'shadow-indigo-600/20',
+    },
+    teacher: {
+      bg: 'bg-emerald-600',
+      text: 'text-emerald-600',
+      hover: 'hover:bg-emerald-700',
+      shadow: 'shadow-emerald-600/20',
+    },
+    student: {
+      bg: 'bg-violet-600',
+      text: 'text-violet-600',
+      hover: 'hover:bg-violet-700',
+      shadow: 'shadow-violet-600/20',
+    },
   };
 
-  const color = roleColors[role];
+  const styles = colorStyles[role];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 transition-colors duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-4 transition-colors duration-300">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className={`w-16 h-16 bg-${color}-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-${color}-600/20`}>
+          <div className={`w-16 h-16 ${styles.bg} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ${styles.shadow}`}>
             <BookOpen className="w-8 h-8 text-white" />
           </div>
-          <h1 className={`text-3xl font-bold tracking-tight mb-2 text-${color}-600`}>Advantech Login</h1>
+          <h1 className={`text-3xl font-bold tracking-tight mb-2 ${styles.text}`}>Advantech Login</h1>
           <p className="text-zinc-500 dark:text-zinc-400 capitalize">{role} Portal Login</p>
         </div>
 
@@ -79,7 +94,7 @@ export default function LoginPage({ role }) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   placeholder="name@example.com"
                 />
               </div>
@@ -94,7 +109,7 @@ export default function LoginPage({ role }) {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   placeholder="••••••••"
                 />
               </div>
@@ -103,7 +118,7 @@ export default function LoginPage({ role }) {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold rounded-xl shadow-lg shadow-${color}-600/20 flex items-center justify-center transition-all disabled:opacity-70`}
+              className={`w-full py-3 ${styles.bg} ${styles.hover} text-white font-semibold rounded-xl shadow-lg ${styles.shadow} flex items-center justify-center transition-all disabled:opacity-70`}
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -13,6 +13,8 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import CourseDetail from './pages/CourseDetail';
 import TeacherStudentDetail from './pages/TeacherStudentsDetail';
+import AdminPendingExams from './pages/AdminPendingExams';
+import AdminCompletedExams from './pages/AdminCompletedExams';
 
 export default function App() {
   return (
@@ -36,6 +38,8 @@ export default function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="courses" element={<AdminCourses />} />
               <Route path="assign" element={<AdminAssign />} />
+              <Route path="pending-exams" element={<AdminPendingExams />} />
+              <Route path="completed-exams" element={<AdminCompletedExams />} />
             </Route>
 
             <Route path="/teacher" element={

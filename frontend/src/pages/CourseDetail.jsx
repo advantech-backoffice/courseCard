@@ -6,6 +6,7 @@ import {
   Clock,
   ChevronRight,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { API_BASE_URL } from "../constants";
 import { useAuth } from "../context/AuthContext";
@@ -100,6 +101,8 @@ export default function CourseDetail() {
   );
 
   const isOverdue = progress < 100 && new Date(course.endDate) < new Date();
+  const isOnTime = progress < 100 && new Date(course.endDate) >= new Date();
+  const isCompleted = progress === 100;
 
   return (
     <div className="space-y-8">
@@ -117,13 +120,35 @@ export default function CourseDetail() {
       <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-8 shadow-sm space-y-4">
 
         <div className="flex justify-between items-start">
-          <h1 className="text-4xl font-bold text-white">{course.course_name}</h1>
-          {isOverdue && (
-            <div className="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-1.5 rounded-full text-xs font-bold flex items-center">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              COURSE OVERDUE
-            </div>
-          )}
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">{course.course_name}</h1>
+            {course.total_duration && (
+              <div className="flex items-center text-sm font-medium text-zinc-400">
+                <Clock className="w-4 h-4 mr-1.5" />
+                Duration: {course.total_duration}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            {isOverdue && (
+              <div className="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-1.5 rounded-full text-xs font-bold flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                LATE / OVERDUE
+              </div>
+            )}
+            {isOnTime && (
+              <div className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded-full text-xs font-bold flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                ON TIME
+              </div>
+            )}
+            {isCompleted && (
+              <div className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-4 py-1.5 rounded-full text-xs font-bold flex items-center">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                COMPLETED
+              </div>
+            )}
+          </div>
         </div>
 
         <p className="text-zinc-500">{course.course_description}</p>
@@ -223,11 +248,11 @@ export default function CourseDetail() {
 
                             <div>
                                 <p className="font-medium">{topic}</p>
-                                {isCompleted && (
-                                    <p className="text-[10px] text-emerald-600/70">
-                                        Completed on {new Date(completionData.completedAt).toLocaleDateString()}
-                                    </p>
-                                )}
+                                 {isCompleted && (
+                                     <p className="text-[10px] text-emerald-600/70">
+                                         Completed on {completionData.completedAt && !isNaN(new Date(completionData.completedAt).getTime()) ? new Date(completionData.completedAt).toLocaleDateString() : new Date().toLocaleDateString()}
+                                     </p>
+                                 )}
                             </div>
                           </div>
 

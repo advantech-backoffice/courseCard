@@ -12,6 +12,10 @@ const courseSchema = new mongoose.Schema({
         module_name: { type: String, required: true },
         module_content: [String]
     }],
+    total_duration: {
+        type: String,
+        default: "1 Month"
+    },
     endDate: {
         type: Date,
         required: true

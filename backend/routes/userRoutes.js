@@ -138,10 +138,16 @@ router.post('/student/complete-topic', async (req, res) => {
 
     await user.save();
 
+    let topicCompletedAt = new Date();
+    const topic = progressEntry.completedTopics.find(t => t.topicKey === topicKey);
+    if (topic && topic.completedAt) {
+      topicCompletedAt = topic.completedAt;
+    }
+
     res.json({
       message: 'Topic marked as completed',
       progress: progressEntry.progressPercentage,
-      completedAt: progressEntry.completedTopics.find(t => t.topicKey === topicKey).completedAt
+      completedAt: topicCompletedAt
     });
 
   } catch (error) {

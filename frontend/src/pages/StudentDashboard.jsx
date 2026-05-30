@@ -32,7 +32,7 @@ export default function StudentDashboard() {
       {/* HEADER */}
       <div>
         <h2 className="text-3xl font-bold">
-          Hello, {user?.name?.split(" ")[0] || 'Learner'}!
+          Hello, {user?.username?.split(" ")[0] || 'Learner'}!
         </h2>
         <p className="text-zinc-500 mt-1">
           Ready to continue your learning journey?

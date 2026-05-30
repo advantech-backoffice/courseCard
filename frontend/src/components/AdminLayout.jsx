@@ -8,7 +8,9 @@ import {
   LogOut, 
   Sun, 
   Moon,
-  ChevronRight
+  ChevronRight,
+  ClipboardList,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -31,6 +33,8 @@ export default function AdminLayout() {
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: BookOpen, label: 'Courses', path: '/admin/courses' },
     { icon: UserPlus, label: 'Assign', path: '/admin/assign' },
+    { icon: ClipboardList, label: 'Pending Exams', path: '/admin/pending-exams' },
+    { icon: CheckCircle, label: 'Completed Exams', path: '/admin/completed-exams' },
   ];
 
   const handleLogout = () => {

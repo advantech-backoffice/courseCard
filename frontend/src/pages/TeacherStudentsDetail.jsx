@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { BookOpen, Clock, CheckCircle, ChevronRight } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
 export default function TeacherStudentDetail() {
@@ -73,24 +73,52 @@ export default function TeacherStudentDetail() {
                       <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 mr-4">
                         <BookOpen className="w-6 h-6" />
                       </div>
-                      <div>
+                      <div className="text-left">
                         <h4 className="text-lg font-bold">{course.course_name}</h4>
-                        <p className="text-sm text-zinc-500 line-clamp-1">{course.course_description}</p>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm text-zinc-500 line-clamp-1">{course.course_description}</p>
+                          {course.total_duration && (
+                            <span className="text-xs font-medium text-zinc-400 flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {course.total_duration}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <ChevronRight className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    <div className="flex items-center gap-4">
+                      {course.isOverdue && (
+                        <div className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full text-[10px] font-bold flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          LATE
+                        </div>
+                      )}
+                      {course.progress < 100 && !course.isOverdue && (
+                        <div className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-bold flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          ON TIME
+                        </div>
+                      )}
+                      {course.progress === 100 && (
+                        <div className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-bold flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          COMPLETED
+                        </div>
+                      )}
+                      <ChevronRight className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    </div>
                   </button>
 
                   {/* Modules & Topics */}
                   {isOpen && (
                     <div className="px-8 pb-6 pt-2 border-t bg-zinc-50 dark:bg-zinc-800">
-                      {course.modules?.map((mod) => (
-                        <div key={mod.module_id} className="mb-4">
+                      {course.modules?.map((mod, modIdx) => (
+                        <div key={mod.module_name || modIdx} className="mb-4">
                           <h5 className="font-semibold mb-2">{mod.module_name}</h5>
                           <ul className="space-y-1">
                             {mod.module_content.map((topic, idx) => {
-                              const completed = isTopicCompleted(course._id, mod.module_id, topic);
+                              const completed = isTopicCompleted(course._id, mod.module_name, topic);
                               return (
                                 <li key={idx} className="flex items-center space-x-2">
                                   {completed ? (

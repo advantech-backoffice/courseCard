@@ -59,7 +59,7 @@ export default function TeacherDashboard() {
       {/* ===== HEADER ===== */}
       <div>
         <h2 className="text-3xl font-bold">
-          Welcome back, {user?.username.split(' ')[0]}!
+          Welcome back, {user?.username?.split(' ')[0] || 'Teacher'}!
         </h2>
         <p className="text-zinc-500 mt-1">
           Manage your assigned students
