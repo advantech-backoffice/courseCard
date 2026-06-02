@@ -1,4 +1,4 @@
-const rawApiBase = import.meta.env.VITE_API_BASE_URL || '';
+const rawApiBase = 'https://course-card-one.vercel.app/' || '';
 const apiBase = rawApiBase.replace(/\/$/, '') || '/api';
 export const API_BASE_URL = apiBase;
 
