@@ -11,20 +11,8 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Create uploads directory if it doesn't exist, or use memory storage for serverless
-const uploadsDir = path.join(__dirname, '../uploads');
-let upload;
-
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-  upload = multer({ dest: uploadsDir });
-} catch (err) {
-  // Fallback to memory storage if filesystem is not writable (serverless)
-  console.warn('Using memory storage for uploads:', err.message);
-  upload = multer({ storage: multer.memoryStorage() });
-}
+// Use memory storage for uploads to avoid read-only file system errors on serverless environments like Vercel
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Excel Upload Route
 router.post('/upload-excel', upload.single('file'), async (req, res) => {
