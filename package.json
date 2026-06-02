@@ -1,0 +1,10 @@
+{
+  "name": "coursecard2",
+  "private": true,
+  "scripts": {
+    "install-all": "cd frontend && npm install && cd ../backend && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm run start",
+    "dev": "cd frontend && npm run dev"
+  }
+}

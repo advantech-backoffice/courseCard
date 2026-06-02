@@ -3,6 +3,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from '../routes/authRoutes.js';
 import userRoutes from '../routes/userRoutes.js';
@@ -11,10 +13,18 @@ import statsRoutes from '../routes/statsRoutes.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--prod');
 
 app.use(cors());
 app.use(bodyParser.json());
+
+if (isProduction) {
+  const frontendDist = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDist));
+}
 
 // Prevent multiple DB connections in serverless
 let isConnected = false;
@@ -23,7 +33,7 @@ const connectDB = async () => {
   if (isConnected) return;
 
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
     isConnected = true;
     console.log("MongoDB connected");
   } catch (err) {
@@ -41,5 +51,12 @@ app.use('/api/stats', statsRoutes);
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Hello from the backend!' });
 });
+
+if (isProduction) {
+  app.get('*', (req, res) => {
+    const frontendDist = path.join(__dirname, '../../frontend/dist');
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 export default app;

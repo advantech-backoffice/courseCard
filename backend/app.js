@@ -3,6 +3,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -11,10 +13,13 @@ import statsRoutes from './routes/statsRoutes.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--prod');
 
 const corsOptions = {
-  origin: 'http://localhost:5173', // Allows all domains (good for Vercel)
+  origin: isProduction ? true : 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -22,7 +27,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
-mongoose.connect(process.env.MONGODB_URI)
+if (isProduction) {
+  const frontendDist = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(frontendDist));
+}
+
+mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log('MongoDB error: ' + err.message));
 
@@ -34,5 +44,12 @@ app.use('/api/stats', statsRoutes);
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Hello from backend 🚀' });
 });
+
+if (isProduction) {
+  app.get('*', (req, res) => {
+    const frontendDist = path.join(__dirname, '../frontend/dist');
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 export default app;
