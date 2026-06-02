@@ -27,8 +27,8 @@ export default function NavLayout({ role }) {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
-      <nav className="h-16 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-50 px-4 sm:px-8 flex items-center justify-between">
+    <div className="min-h-screen bg-transparent dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
+      <nav className="h-16 bg-white/70 backdrop-blur-xl dark:bg-zinc-900/80 border-b border-zinc-200/60 dark:border-zinc-800 sticky top-0 z-50 px-4 sm:px-8 flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to={`/${role}/dashboard`} className="flex items-center">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">

@@ -38,6 +38,23 @@ export default function TeacherStudentDetail() {
     return progressData.completedTopics?.some(t => t.topicKey === topicKey) || false;
   };
 
+  const handleStartCourse = async (courseId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/student/${id}/course/${courseId}/start`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        // Refetch data
+        const studentRes = await fetch(`${API_BASE_URL}/users/student/${id}`);
+        const studentData = await studentRes.json();
+        setStudent(studentData.studentData);
+        setCourses(studentData.courseData);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   if (loading) return <div className="p-10">Loading...</div>;
 
   return (
@@ -65,9 +82,9 @@ export default function TeacherStudentDetail() {
                 <div key={course._id} className="rounded-2xl border bg-white dark:bg-zinc-900 overflow-hidden">
 
                   {/* Course Card */}
-                  <button
+                  <div
                     onClick={() => setOpenCourse(isOpen ? null : course._id)}
-                    className="w-full flex items-center justify-between p-6"
+                    className="w-full flex items-center justify-between p-6 cursor-pointer text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 mr-4">
@@ -88,6 +105,22 @@ export default function TeacherStudentDetail() {
                     </div>
 
                     <div className="flex items-center gap-4">
+                      {!course.startedAt ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartCourse(course._id);
+                          }}
+                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow transition-colors"
+                        >
+                          Start Course
+                        </button>
+                      ) : (
+                        <div className="text-xs font-medium text-zinc-500 mr-2 flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-1 text-emerald-500" />
+                          Started: {new Date(course.startedAt).toLocaleDateString()}
+                        </div>
+                      )}
                       {course.isOverdue && (
                         <div className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full text-[10px] font-bold flex items-center">
                           <AlertCircle className="w-3 h-3 mr-1" />
@@ -108,7 +141,7 @@ export default function TeacherStudentDetail() {
                       )}
                       <ChevronRight className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
-                  </button>
+                  </div>
 
                   {/* Modules & Topics */}
                   {isOpen && (

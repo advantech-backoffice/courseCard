@@ -5,6 +5,7 @@ import xlsx from 'xlsx';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import User from '../models/User.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,12 +155,25 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Helper function to update student progress after a course change
+const updateCourseProgress = async (course) => {
+  const totalTopics = course.modules.reduce((acc, mod) => acc + (mod.module_content ? mod.module_content.length : 0), 0);
+  const users = await User.find({ "progress.courseId": course._id });
+  for (let user of users) {
+    let progressEntry = user.progress.find(p => p.courseId.toString() === course._id.toString());
+    // Only update students who haven't completed the course yet
+    if (progressEntry && progressEntry.progressPercentage !== 100 && !progressEntry.examCompleted) {
+      progressEntry.progressPercentage = totalTopics ? Math.round((progressEntry.completedTopics.length / totalTopics) * 100) : 0;
+      if (progressEntry.progressPercentage > 100) progressEntry.progressPercentage = 100; // Cap at 100
+      await user.save();
+    }
+  }
+};
+
 router.put('/:id', async (req, res) => {
   try {
-    const courseId = Number(req.params.id);
-
-    const updatedCourse = await Course.findOneAndUpdate(
-      { course_id: courseId },
+    const updatedCourse = await Course.findByIdAndUpdate(
+      req.params.id,
       req.body,
       {
         new: true,
@@ -173,6 +187,7 @@ router.put('/:id', async (req, res) => {
       });
     }
 
+    await updateCourseProgress(updatedCourse);
     res.json(updatedCourse);
 
   } catch (error) {
@@ -198,6 +213,7 @@ router.put('/:id/modules', async (req, res) => {
     try {
         const course = await Course.findByIdAndUpdate(req.params.id, { modules: req.body }, { new: true });
         if (!course) return res.status(404).json({ message: 'Course not found' });
+        await updateCourseProgress(course);
         res.json(course);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -208,6 +224,7 @@ router.delete('/:id/modules/:moduleId', async (req, res) => {
     try {
         const course = await Course.findByIdAndUpdate(req.params.id, { $pull: { modules: { _id: req.params.moduleId } } }, { new: true });
         if (!course) return res.status(404).json({ message: 'Course not found' });
+        await updateCourseProgress(course);
         res.json(course);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -218,7 +235,6 @@ router.delete('/:id/modules/:moduleId', async (req, res) => {
 router.get('/teacher/:teacherId', async (req, res) => {
     try {
         // Since we already have the assignedCourses in the User model
-        const User = (await import('../models/User.js')).default;
         const user = await User.findById(req.params.teacherId).populate('assignedCourses');
         res.json(user ? user.assignedCourses : []);
     } catch (error) {

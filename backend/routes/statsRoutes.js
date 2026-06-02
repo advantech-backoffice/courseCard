@@ -194,7 +194,7 @@ router.get('/pending-exams/export', async (req, res) => {
       student.progress.forEach(p => {
         if (p.progressPercentage === 100 && p.courseId && !p.examCompleted) {
           // Find the earliest completion date as the pseudo start date
-          let startDate = student.createdAt;
+          let startDate = p.startedAt || student.createdAt;
           if (p.completedTopics && p.completedTopics.length > 0) {
             startDate = p.completedTopics[0].completedAt;
           }

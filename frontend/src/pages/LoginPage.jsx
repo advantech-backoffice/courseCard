@@ -66,8 +66,8 @@ export default function LoginPage({ role }) {
   const styles = colorStyles[role];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-4 transition-colors duration-300">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-transparent dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-4 transition-colors duration-300">
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-10">
           <div className={`w-16 h-16 ${styles.bg} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ${styles.shadow}`}>
             <BookOpen className="w-8 h-8 text-white" />
@@ -76,8 +76,11 @@ export default function LoginPage({ role }) {
           <p className="text-zinc-500 dark:text-zinc-400 capitalize">{role} Portal Login</p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-xl shadow-zinc-200/50 dark:shadow-none border border-zinc-200 dark:border-zinc-800">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white/70 backdrop-blur-xl dark:bg-zinc-900 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-white/50 dark:border-zinc-800 relative overflow-hidden">
+          {/* Subtle decorative blob */}
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-2xl pointer-events-none"></div>
+          
+          <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             {error && (
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl flex items-center text-red-600 dark:text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />

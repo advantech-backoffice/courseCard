@@ -1,3 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
+
+@layer base {
+  body {
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    @apply text-slate-900 transition-colors duration-500;
+  }
+  
+  /* Modern Premium Light Mode Background */
+  :root:not(.dark) body {
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(253, 50%, 94%, 1) 0, transparent 40%), 
+      radial-gradient(at 100% 0%, hsla(225, 60%, 94%, 1) 0, transparent 40%), 
+      radial-gradient(at 100% 100%, hsla(339, 49%, 94%, 1) 0, transparent 40%),
+      radial-gradient(at 0% 100%, hsla(189, 50%, 94%, 1) 0, transparent 40%);
+    background-attachment: fixed;
+  }
+  
+  .dark body {
+    @apply bg-zinc-950 text-zinc-100;
+  }
+}

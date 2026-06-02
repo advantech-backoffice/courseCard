@@ -35,22 +35,21 @@ router.get("/teachers", async (req, res) => {
 
 router.post("/enroll-student", async (req, res) => {
   const { studentId, courseId } = req.body;
+  const studentIds = Array.isArray(studentId) ? studentId : [studentId];
+  const courseIds = Array.isArray(courseId) ? courseId : [courseId];
 
   try {
-    const student = await User.findById(studentId);
+    for (const sId of studentIds) {
+      const student = await User.findById(sId);
+      if (!student || student.role !== "student") continue;
 
-    if (!student || student.role !== "student") {
-      return res.status(404).json({ message: "Student not found" });
+      await User.findByIdAndUpdate(
+        sId,
+        { $addToSet: { assignedCourses: { $each: courseIds } } }
+      );
     }
 
-    // Add course only if not already enrolled
-    await User.findByIdAndUpdate(
-      studentId,
-      { $addToSet: { assignedCourses: courseId } },
-      { new: true },
-    );
-
-    res.json({ message: "Student enrolled successfully" });
+    res.json({ message: "Student(s) enrolled successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -58,27 +57,22 @@ router.post("/enroll-student", async (req, res) => {
 
 router.post("/assign-student", async (req, res) => {
   const { teacherId, studentId } = req.body;
+  const studentIds = Array.isArray(studentId) ? studentId : [studentId];
 
   try {
     const teacher = await User.findById(teacherId);
-    const student = await User.findById(studentId);
 
     if (!teacher || teacher.role !== "teacher") {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-    if (!student || student.role !== "student") {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    // Add student to teacher's assignedStudents
+    // Add students to teacher's assignedStudents
     await User.findByIdAndUpdate(
       teacherId,
-      { $addToSet: { assignedStudents: studentId } },
-      { new: true },
+      { $addToSet: { assignedStudents: { $each: studentIds } } }
     );
 
-    res.json({ message: "Student assigned to teacher successfully" });
+    res.json({ message: "Student(s) assigned to teacher successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -254,7 +248,8 @@ router.get("/student/:id", async (req, res) => {
         ...course.toObject(),
         progress,
         isOverdue,
-        completedTopics: progressData?.completedTopics || []
+        completedTopics: progressData?.completedTopics || [],
+        startedAt: progressData?.startedAt
       };
     });
 
@@ -309,14 +304,25 @@ router.post("/assign-course", async (req, res) => {
   }
 });
 
-// Enroll student in course
-router.post("/enroll-student", async (req, res) => {
-  const { studentId, courseId } = req.body;
+router.post("/student/:id/course/:courseId/start", async (req, res) => {
   try {
-    await User.findByIdAndUpdate(studentId, {
-      $addToSet: { assignedCourses: courseId },
-    });
-    res.json({ message: "Student enrolled in course successfully" });
+    const { id, courseId } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "Student not found" });
+
+    const progress = user.progress.find((p) => p.courseId.toString() === courseId);
+    if (!progress) {
+      return res.status(404).json({ message: "Course not found in student progress" });
+    }
+
+    if (progress.startedAt) {
+      return res.status(400).json({ message: "Course already started" });
+    }
+
+    progress.startedAt = new Date();
+    await user.save();
+
+    res.json({ message: "Course started successfully", startedAt: progress.startedAt });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }

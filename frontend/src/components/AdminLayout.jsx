@@ -43,10 +43,10 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex transition-colors duration-300">
+    <div className="min-h-screen bg-transparent dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex transition-colors duration-300">
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 bg-white/70 backdrop-blur-xl dark:bg-zinc-900 border-r border-zinc-200/60 dark:border-zinc-800 transition-all duration-300 ease-in-out",
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >
@@ -122,7 +122,7 @@ export default function AdminLayout() {
           isSidebarOpen ? "ml-64" : "ml-20"
         )}
       >
-        <header className="h-16 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-40 px-8 flex items-center justify-between">
+        <header className="h-16 bg-white/60 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800 sticky top-0 z-40 px-8 flex items-center justify-between">
           <h1 className="text-lg font-semibold capitalize">
             {location.pathname.split('/').pop()?.replace('-', ' ')}
           </h1>

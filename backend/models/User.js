@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
         progressPercentage: { type: Number, default: 0 },
         examCompleted: { type: Boolean, default: false },
         examCompletedAt: { type: Date },
+        startedAt: { type: Date },
       },
     ],
   },
