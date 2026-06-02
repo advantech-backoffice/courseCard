@@ -26,22 +26,29 @@ if (isProduction) {
   app.use(express.static(frontendDist));
 }
 
-// Prevent multiple DB connections in serverless
-let isConnected = false;
-
+// Serverless MongoDB connection middleware
 const connectDB = async () => {
-  if (isConnected) return;
+  if (mongoose.connections[0].readyState) {
+    return;
+  }
 
   try {
     await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
-    isConnected = true;
     console.log("MongoDB connected");
   } catch (err) {
     console.log("MongoDB connection error:", err.message);
+    throw err;
   }
 };
 
-connectDB();
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ message: "Database connection failed", error: err.message });
+  }
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
