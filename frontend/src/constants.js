@@ -1,5 +1,6 @@
-const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-export const API_BASE_URL = apiBase.endsWith('/api') ? apiBase : `${apiBase.replace(/\/$/, '')}/api`;
+const rawApiBase = import.meta.env.VITE_API_BASE_URL || '';
+const apiBase = rawApiBase.replace(/\/$/, '') || '/api';
+export const API_BASE_URL = apiBase;
 
 export const ROUTES = {
   HOME: '/',
