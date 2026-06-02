@@ -3,9 +3,28 @@ import Course from '../models/Courses.js';
 import multer from 'multer';
 import xlsx from 'xlsx';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+
+// Create uploads directory if it doesn't exist, or use memory storage for serverless
+const uploadsDir = path.join(__dirname, '../uploads');
+let upload;
+
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  upload = multer({ dest: uploadsDir });
+} catch (err) {
+  // Fallback to memory storage if filesystem is not writable (serverless)
+  console.warn('Using memory storage for uploads:', err.message);
+  upload = multer({ storage: multer.memoryStorage() });
+}
 
 // Excel Upload Route
 router.post('/upload-excel', upload.single('file'), async (req, res) => {
@@ -15,7 +34,17 @@ router.post('/upload-excel', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: "Please upload a file" });
     }
 
-    const workbook = xlsx.readFile(file.path);
+    let workbook;
+    if (file.path) {
+      // Disk storage: read from file path
+      workbook = xlsx.readFile(file.path);
+    } else if (file.buffer) {
+      // Memory storage: read from buffer
+      workbook = xlsx.read(file.buffer, { type: 'buffer' });
+    } else {
+      return res.status(400).json({ message: "Invalid file format" });
+    }
+
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(sheet);
@@ -71,8 +100,10 @@ router.post('/upload-excel', upload.single('file'), async (req, res) => {
 
     await Course.insertMany(coursesToInsert);
 
-    // Clean up uploaded file
-    fs.unlinkSync(file.path);
+    // Clean up uploaded file (only if using disk storage)
+    if (file.path) {
+      fs.unlinkSync(file.path);
+    }
 
     res.json({ message: "Courses uploaded successfully", count: coursesToInsert.length });
   } catch (error) {
