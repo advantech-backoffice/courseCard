@@ -46,7 +46,7 @@ app.get('/api/test', (req, res) => {
 });
 
 if (isProduction) {
-  app.get('*', (req, res) => {
+  app.get(/.*/, (req, res) => {
     const frontendDist = path.join(__dirname, '../frontend/dist');
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
