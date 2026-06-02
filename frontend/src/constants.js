@@ -1,6 +1,4 @@
-const rawApiBase = 'https://course-card-one.vercel.app/' || '';
-const apiBase = rawApiBase.replace(/\/$/, '') || '/api';
-export const API_BASE_URL = apiBase;
+export const API_BASE_URL = 'https://course-card-one.vercel.app/api';
 
 export const ROUTES = {
   HOME: '/',
