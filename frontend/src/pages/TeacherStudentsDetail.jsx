@@ -29,13 +29,13 @@ export default function TeacherStudentDetail() {
     fetchData();
   }, [id]);
 
-  const isTopicCompleted = (courseId, moduleId, topicName) => {
+  const getTopicStatus = (courseId, moduleId, topicName) => {
     const progressData = student?.progress?.find(
       (p) => p.courseId.toString() === courseId.toString()
     );
-    if (!progressData) return false;
+    if (!progressData) return null;
     const topicKey = `${moduleId}-${topicName}`;
-    return progressData.completedTopics?.some(t => t.topicKey === topicKey) || false;
+    return progressData.completedTopics?.find(t => t.topicKey === topicKey) || null;
   };
 
   const handleStartCourse = async (courseId) => {
@@ -151,15 +151,27 @@ export default function TeacherStudentDetail() {
                           <h5 className="font-semibold mb-2">{mod.module_name}</h5>
                           <ul className="space-y-1">
                             {mod.module_content.map((topic, idx) => {
-                              const completed = isTopicCompleted(course._id, mod.module_name, topic);
+                              const topicStatus = getTopicStatus(course._id, mod.module_name, topic);
+                              const completed = !!topicStatus;
                               return (
-                                <li key={idx} className="flex items-center space-x-2">
-                                  {completed ? (
-                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                  ) : (
-                                    <Clock className="w-4 h-4 text-zinc-400" />
-                                  )}
-                                  <span className={completed ? "line-through text-zinc-400" : ""}>{topic}</span>
+                                <li key={idx} className="flex items-start space-x-2 py-1">
+                                  <div className="mt-0.5">
+                                    {completed ? (
+                                      <CheckCircle className="w-4 h-4 text-green-500" />
+                                    ) : (
+                                      <Clock className="w-4 h-4 text-zinc-400" />
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className={completed ? "line-through text-zinc-400" : "text-zinc-700 dark:text-zinc-300"}>
+                                      {topic}
+                                    </span>
+                                    {completed && topicStatus.completedAt && (
+                                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-500 mt-0.5">
+                                        Completed on {new Date(topicStatus.completedAt).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
                                 </li>
                               )
                             })}
