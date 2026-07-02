@@ -74,7 +74,7 @@ export default function AdminPendingExams() {
             placeholder="Search by student name or course..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            className="w-full pl-10 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
         </div>
         
@@ -96,7 +96,7 @@ export default function AdminPendingExams() {
                 </div>
                 <button
                   onClick={() => markExamDone(exam.userId, exam.courseId)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
                 >
                   Mark Done
                 </button>

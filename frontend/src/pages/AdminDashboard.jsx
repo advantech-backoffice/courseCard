@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   if (isLoading) return <div className="text-center">Loading dashboard...</div>;
 
   const cards = [
-    { label: "Total Users", value: stats?.users, icon: Users, color: "indigo" },
+    { label: "Total Users", value: stats?.users, icon: Users, color: "blue" },
     {
       label: "Students",
       value: stats?.students,
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="text-right">
-                  <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-600 capitalize">
+                  <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-600 capitalize">
                     {user.role}
                   </span>
                   <p className="text-xs text-zinc-400 mt-1">

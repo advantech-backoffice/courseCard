@@ -274,7 +274,7 @@ export default function AdminCourses() {
 
                   <button
                     onClick={() => addTopic(mIndex)}
-                    className="text-indigo-600 font-medium"
+                    className="text-blue-600 font-medium"
                   >
                     + Add Topic
                   </button>
@@ -283,7 +283,7 @@ export default function AdminCourses() {
 
               <button
                 onClick={addModule}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-xl"
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl"
               >
                 + Add Module
               </button>
@@ -300,7 +300,7 @@ export default function AdminCourses() {
 
               <button
                 onClick={saveCourseUpdate}
-                className="px-4 py-2 rounded-xl bg-indigo-600 text-white"
+                className="px-4 py-2 rounded-xl bg-blue-600 text-white"
               >
                 Save Changes
               </button>
@@ -321,7 +321,7 @@ export default function AdminCourses() {
                   ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
                   : importStatus.type === "error"
                     ? "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
-                    : "bg-indigo-50 border-indigo-200 text-indigo-800 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-400"
+                    : "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400"
               }`}
           >
             {importStatus.type === "success" ? (
@@ -329,7 +329,7 @@ export default function AdminCourses() {
             ) : importStatus.type === "error" ? (
               <AlertCircle className="w-5 h-5" />
             ) : (
-              <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
             )}
             <span className="font-medium">{importStatus.message}</span>
           </div>
@@ -345,7 +345,7 @@ export default function AdminCourses() {
             placeholder="Search courses by title..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all shadow-sm"
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -408,7 +408,7 @@ export default function AdminCourses() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
+                        <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
                           <BookOpen className="w-6 h-6" />
                         </div>
                         <div className="ml-4">

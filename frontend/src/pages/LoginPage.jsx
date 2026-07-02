@@ -44,10 +44,10 @@ export default function LoginPage({ role }) {
 
   const colorStyles = {
     admin: {
-      bg: 'bg-indigo-600',
-      text: 'text-indigo-600',
-      hover: 'hover:bg-indigo-700',
-      shadow: 'shadow-indigo-600/20',
+      bg: 'bg-blue-600',
+      text: 'text-blue-600',
+      hover: 'hover:bg-blue-700',
+      shadow: 'shadow-blue-600/20',
     },
     teacher: {
       bg: 'bg-emerald-600',
@@ -78,7 +78,7 @@ export default function LoginPage({ role }) {
 
         <div className="bg-white/70 backdrop-blur-xl dark:bg-zinc-900 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-white/50 dark:border-zinc-800 relative overflow-hidden">
           {/* Subtle decorative blob */}
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-2xl pointer-events-none"></div>
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 blur-2xl pointer-events-none"></div>
           
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             {error && (
@@ -97,7 +97,7 @@ export default function LoginPage({ role }) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   placeholder="name@example.com"
                 />
               </div>
@@ -112,7 +112,7 @@ export default function LoginPage({ role }) {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   placeholder="••••••••"
                 />
               </div>
@@ -141,7 +141,7 @@ export default function LoginPage({ role }) {
                 <Link
                   key={r}
                   to={`/${r}/login`}
-                  className="text-xs font-medium text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 capitalize transition-colors"
+                  className="text-xs font-medium text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 capitalize transition-colors"
                 >
                   Are you a {r} ?
                 </Link>

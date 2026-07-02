@@ -162,7 +162,7 @@ export default function CourseDetail() {
 
           <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
             <div
-              className="bg-indigo-600 h-3 transition-all duration-500"
+              className="bg-blue-600 h-3 transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -191,7 +191,7 @@ export default function CourseDetail() {
               >
                 <div className="flex items-center">
 
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-zinc-800 text-indigo-500">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-zinc-800 text-blue-500">
                     <PlayCircle className="w-5 h-5" />
                   </div>
 
@@ -208,7 +208,7 @@ export default function CourseDetail() {
 
                 <ChevronRight
                   className={`w-5 h-5 transition-transform ${
-                    isOpen ? "rotate-90 text-indigo-500" : "text-zinc-500"
+                    isOpen ? "rotate-90 text-blue-500" : "text-zinc-500"
                   }`}
                 />
               </button>

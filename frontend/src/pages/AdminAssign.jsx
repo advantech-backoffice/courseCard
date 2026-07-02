@@ -42,7 +42,7 @@ const SearchableSelect = ({ options, value, onChange, multiple, placeholder, ass
   return (
     <div className="relative" ref={dropdownRef}>
       <div 
-        className="min-h-[3.25rem] w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus-within:ring-2 focus-within:ring-indigo-600 transition-all cursor-pointer flex items-center justify-between"
+        className="min-h-[3.25rem] w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus-within:ring-2 focus-within:ring-blue-600 transition-all cursor-pointer flex items-center justify-between"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex flex-wrap gap-2 flex-1 items-center">
@@ -51,9 +51,9 @@ const SearchableSelect = ({ options, value, onChange, multiple, placeholder, ass
               value.map(val => {
                 const opt = options.find(o => o.value === val);
                 return (
-                  <span key={val} className="flex items-center gap-1.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-lg text-sm font-medium border border-indigo-200 dark:border-indigo-800 shadow-sm transition-all hover:bg-indigo-200 dark:hover:bg-indigo-800/80">
+                  <span key={val} className="flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-sm font-medium border border-blue-200 dark:border-blue-800 shadow-sm transition-all hover:bg-blue-200 dark:hover:bg-blue-800/80">
                     {opt?.label}
-                    <X className="w-3.5 h-3.5 cursor-pointer hover:text-indigo-900 dark:hover:text-indigo-100 transition-colors" onClick={(e) => removeValue(e, val)} />
+                    <X className="w-3.5 h-3.5 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100 transition-colors" onClick={(e) => removeValue(e, val)} />
                   </span>
                 );
               })
@@ -66,7 +66,7 @@ const SearchableSelect = ({ options, value, onChange, multiple, placeholder, ass
             </span>
           )}
         </div>
-        <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`} />
+        <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
       </div>
 
       {isOpen && (
@@ -94,7 +94,7 @@ const SearchableSelect = ({ options, value, onChange, multiple, placeholder, ass
                       isAssigned 
                         ? 'opacity-60 cursor-not-allowed bg-zinc-50 dark:bg-zinc-800/50' 
                         : isSelected 
-                          ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium shadow-sm' 
+                          ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium shadow-sm' 
                           : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:scale-[0.98]'
                     }`}
                     onClick={() => !isAssigned && handleSelect(opt.value)}
@@ -105,7 +105,7 @@ const SearchableSelect = ({ options, value, onChange, multiple, placeholder, ass
                         Already Assigned
                       </span>
                     ) : isSelected && (
-                      <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     )}
                   </div>
                 );
@@ -291,7 +291,7 @@ export default function AdminAssign() {
               <button
                 type="submit"
                 disabled={isSubmitting || !selectedStudentForCourse || selectedCourses.length === 0}
-                className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-violet-600/20 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                className="w-full py-4 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-violet-600/20 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
               >
                 {isSubmitting ? "Enrolling..." : "Enroll Student"}
               </button>
@@ -301,8 +301,8 @@ export default function AdminAssign() {
 
         <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-center mb-8">
-            <div className="p-3.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl mr-4 shadow-sm">
-              <UserPlus className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="p-3.5 bg-blue-50 dark:bg-blue-900/20 rounded-2xl mr-4 shadow-sm">
+              <UserPlus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <h3 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">Assign Students to Teacher</h3>
@@ -330,7 +330,7 @@ export default function AdminAssign() {
             <div className="space-y-2.5">
               <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex justify-between">
                 <span>Select Students</span>
-                {selectedStudentsForTeacher.length > 0 && <span className="text-indigo-600 dark:text-indigo-400">{selectedStudentsForTeacher.length} selected</span>}
+                {selectedStudentsForTeacher.length > 0 && <span className="text-blue-600 dark:text-blue-400">{selectedStudentsForTeacher.length} selected</span>}
               </label>
               <SearchableSelect 
                 options={studentOptions}
@@ -346,7 +346,7 @@ export default function AdminAssign() {
               <button
                 type="submit"
                 disabled={isSubmitting || !selectedTeacher || selectedStudentsForTeacher.length === 0}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
               >
                 {isSubmitting ? "Assigning..." : "Assign Students"}
               </button>

@@ -128,7 +128,7 @@ export default function AdminUsers() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl"
+          className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl"
         >
           <Plus className="mr-2" /> Add User
         </button>
@@ -223,7 +223,7 @@ function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-      <div className="bg-indigo-950 p-8 rounded-2xl w-96 space-y-4">
+      <div className="bg-blue-950 p-8 rounded-2xl w-96 space-y-4">
 
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">{title}</h2>
@@ -300,7 +300,7 @@ function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword 
 
         <button
           onClick={onSubmit}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl"
+          className="w-full bg-blue-600 text-white py-3 rounded-xl"
         >
           Save
         </button>

@@ -95,7 +95,7 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
-                  <div style={{ width: `${course.progress}%` }} className="bg-indigo-600 h-3 transition-all duration-500" />
+                  <div style={{ width: `${course.progress}%` }} className="bg-blue-600 h-3 transition-all duration-500" />
                 </div>
               </div>
 

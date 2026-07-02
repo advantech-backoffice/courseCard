@@ -111,7 +111,7 @@ export default function TeacherStudentDetail() {
                             e.stopPropagation();
                             handleStartCourse(course._id);
                           }}
-                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow transition-colors"
+                          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow transition-colors"
                         >
                           Start Course
                         </button>
