@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Search, Plus, Edit2, Trash2, Mail, Shield, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Search, Plus, Edit2, Trash2, Mail, Shield, X, Upload } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
 export default function AdminUsers() {
@@ -17,6 +17,9 @@ export default function AdminUsers() {
     password: '',
     role: ''
   });
+
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
 
   // 🔄 Load Users
   const fetchUsers = () => {
@@ -113,6 +116,41 @@ export default function AdminUsers() {
     });
   };
 
+  // 📂 Bulk Upload Students
+  const handleBulkUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formDataObj = new FormData();
+    formDataObj.append("file", file);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/bulk-upload`, {
+        method: "POST",
+        body: formDataObj,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        let msg = data.message;
+        if (data.errors && data.errors.length > 0) {
+          msg += "\n\nWarnings:\n" + data.errors.join("\n");
+        }
+        alert(msg);
+        fetchUsers();
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (err) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-6">
 
@@ -131,6 +169,21 @@ export default function AdminUsers() {
           className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl"
         >
           <Plus className="mr-2" /> Add User
+        </button>
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".xlsx,.xls"
+          onChange={handleBulkUpload}
+          className="hidden"
+        />
+        <button
+          onClick={() => fileInputRef.current.click()}
+          disabled={uploading}
+          className="flex items-center px-6 py-3 bg-green-600 text-white rounded-xl disabled:opacity-50"
+        >
+          <Upload className="mr-2" /> {uploading ? "Uploading..." : "Bulk Upload Excel"}
         </button>
       </div>
 

@@ -1,10 +1,14 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import multer from "multer";
+import xlsx from "xlsx";
 import Course from "../models/Courses.js";
 import User from "../models/User.js";
 import express from "express";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "pokemon";
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.get("/", async (req, res) => {
   try {
@@ -30,6 +34,96 @@ router.get("/teachers", async (req, res) => {
     res.json(teachers);
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+
+// Bulk upload students via Excel
+router.post("/bulk-upload", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Please upload an Excel file" });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "Excel file is empty" });
+    }
+
+    let created = 0;
+    let skipped = 0;
+    const errors = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const username = (row.username || row.Username || row.Name || "").toString().trim();
+      const email = (row.email || row.Email || "").toString().trim();
+      const password = (row.password || row.Password || "").toString().trim();
+      const courseNames = (row.course || row.Course || "").toString().split(",").map(s => s.trim()).filter(Boolean);
+      const facultyNames = (row.faculty || row.Faculty || "").toString().split(",").map(s => s.trim()).filter(Boolean);
+      const role = (row.role || row.Role || "student").toString().trim().toLowerCase();
+
+      if (!username || !email || !password) {
+        errors.push(`Row ${i + 2}: Missing username, email, or password`);
+        continue;
+      }
+
+      // Check for existing username
+      const existing = await User.findOne({ username });
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const newUser = await User.create({
+        username,
+        email,
+        password: hashedPassword,
+        role,
+      });
+
+      // Enroll in courses if provided
+      for (const cName of courseNames) {
+        const course = await Course.findOne({ course_name: cName });
+        if (course) {
+          await User.findByIdAndUpdate(newUser._id, {
+            $addToSet: { assignedCourses: course._id },
+          });
+        } else {
+          errors.push(`Row ${i + 2}: Course "${cName}" not found`);
+        }
+      }
+
+      // Assign to teachers (faculty) if provided
+      for (const fName of facultyNames) {
+        const teacher = await User.findOne({ username: fName, role: "teacher" });
+        if (teacher) {
+          await User.findByIdAndUpdate(teacher._id, {
+            $addToSet: { assignedStudents: newUser._id },
+          });
+        } else {
+          errors.push(`Row ${i + 2}: Teacher "${fName}" not found`);
+        }
+      }
+
+      created++;
+    }
+
+    res.json({
+      message: `Upload complete: ${created} created, ${skipped} skipped (duplicates)`,
+      created,
+      skipped,
+      errors,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Upload failed: " + error.message });
   }
 });
 
