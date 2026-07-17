@@ -1,33 +1,46 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Clock, CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
+import { useAuth } from '../context/AuthContext';
 
 export default function TeacherStudentDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [openCourse, setOpenCourse] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
+        const teacherRes = await fetch(`${API_BASE_URL}/users/teacher/${user._id}/students`);
+        const teacherStudents = await teacherRes.json();
+        const isAssigned = teacherStudents.some(s => s._id === id);
+
+        if (!isAssigned) {
+          setError('You are not assigned to this student.');
+          setLoading(false);
+          return;
+        }
+
         const studentRes = await fetch(`${API_BASE_URL}/users/student/${id}`);
         const studentData = await studentRes.json();
 
         setStudent(studentData.studentData);
-
         setCourses(studentData.courseData);
-
         setLoading(false);
       } catch (error) {
-        console.error(error);
+        setError('Failed to load student data.');
+        setLoading(false);
       }
     }
 
     fetchData();
-  }, [id]);
+  }, [id, user]);
 
   const getTopicStatus = (courseId, moduleId, topicName) => {
     const progressData = student?.progress?.find(
@@ -44,7 +57,6 @@ export default function TeacherStudentDetail() {
         method: 'POST'
       });
       if (response.ok) {
-        // Refetch data
         const studentRes = await fetch(`${API_BASE_URL}/users/student/${id}`);
         const studentData = await studentRes.json();
         setStudent(studentData.studentData);
@@ -55,7 +67,20 @@ export default function TeacherStudentDetail() {
     }
   };
 
-  if (loading) return <div className="p-10">Loading...</div>;
+  if (loading) return <div className="p-10 text-zinc-500">Loading...</div>;
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate(-1)} className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-900">
+          <AlertCircle className="w-4 h-4 mr-2" /> Back
+        </button>
+        <div className="text-center py-20">
+          <p className="text-red-500 font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

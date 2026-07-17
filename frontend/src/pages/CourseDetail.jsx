@@ -13,25 +13,25 @@ import { useAuth } from "../context/AuthContext";
 
 export default function CourseDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
   const [userProgress, setUserProgress] = useState([]);
   const [openModule, setOpenModule] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activityModal, setActivityModal] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState("lecture");
 
   // ===== LOAD COURSE + PROGRESS FROM DATABASE =====
   useEffect(() => {
     async function loadData() {
       try {
-        // 1️⃣ Load course
         const courseRes = await fetch(`${API_BASE_URL}/courses/${id}`);
         const courseData = await courseRes.json();
         setCourse(courseData);
 
-        // 2️⃣ Load user progress
-        const userRes = await fetch(`${API_BASE_URL}/users/${user._id}`);
+        const userRes = await authFetch(`${API_BASE_URL}/users/${user._id}`);
         const userData = await userRes.json();
 
         const progressData = userData.progress?.find(
@@ -54,7 +54,7 @@ export default function CourseDetail() {
   }, [id, user]);
 
   // ===== MARK TOPIC COMPLETED =====
-  const markTopicCompleted = async (moduleId, topicName) => {
+  const markTopicCompleted = async (moduleId, topicName, activityType) => {
     const topicKey = `${moduleId}-${topicName}`;
 
     if (userProgress.some(t => t.topicKey === topicKey)) return;
@@ -70,6 +70,7 @@ export default function CourseDetail() {
             courseId: id,
             moduleId,
             topicName,
+            activityType,
           }),
         }
       );
@@ -78,9 +79,24 @@ export default function CourseDetail() {
       const data = await res.json();
 
       // Update UI immediately
-      setUserProgress((prev) => [...prev, { topicKey, completedAt: data.completedAt }]);
+      setUserProgress((prev) => [...prev, { topicKey, completedAt: data.completedAt, activityType }]);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // ===== OPEN ACTIVITY MODAL =====
+  const openActivitySelector = (moduleId, topicName) => {
+    const topicKey = `${moduleId}-${topicName}`;
+    if (userProgress.some(t => t.topicKey === topicKey)) return;
+    setActivityModal({ moduleId, topicName });
+    setSelectedActivity("lecture");
+  };
+
+  const confirmActivity = () => {
+    if (activityModal) {
+      markTopicCompleted(activityModal.moduleId, activityModal.topicName, selectedActivity);
+      setActivityModal(null);
     }
   };
 
@@ -88,7 +104,24 @@ export default function CourseDetail() {
   if (isLoading)
     return <div className="animate-pulse h-64 bg-zinc-200 rounded-3xl" />;
 
-  if (!course) return <div>Course not found</div>;
+  if (!course) return (
+    <div className="space-y-4">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-900"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </button>
+      <div className="text-center py-20">
+        <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
+          <AlertCircle className="w-10 h-10 text-zinc-400" />
+        </div>
+        <h3 className="text-xl font-bold mb-2">Course not found</h3>
+        <p className="text-zinc-500">This course may have been removed or is unavailable.</p>
+      </div>
+    </div>
+  );
 
   // ===== CALCULATE PROGRESS =====
   const totalTopics = course.modules.reduce(
@@ -227,7 +260,7 @@ export default function CourseDetail() {
                         <li
                           key={tIndex}
                           onClick={() =>
-                            markTopicCompleted(
+                            openActivitySelector(
                               module.module_name,
                               topic
                             )
@@ -250,7 +283,7 @@ export default function CourseDetail() {
                                 <p className="font-medium">{topic}</p>
                                  {isCompleted && (
                                      <p className="text-[10px] text-emerald-600/70">
-                                         Completed on {completionData.completedAt && !isNaN(new Date(completionData.completedAt).getTime()) ? new Date(completionData.completedAt).toLocaleDateString() : new Date().toLocaleDateString()}
+                                         {completionData.activityType ? completionData.activityType.toUpperCase() : "LECTURE"} — Completed on {completionData.completedAt && !isNaN(new Date(completionData.completedAt).getTime()) ? new Date(completionData.completedAt).toLocaleDateString() : new Date().toLocaleDateString()}
                                      </p>
                                  )}
                             </div>
@@ -273,6 +306,47 @@ export default function CourseDetail() {
           );
         })}
       </div>
+
+      {/* ===== ACTIVITY TYPE MODAL ===== */}
+      {activityModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-2xl w-80 space-y-4">
+            <h3 className="text-lg font-bold text-white">Select Activity Type</h3>
+            <p className="text-sm text-zinc-400">{activityModal.topicName}</p>
+
+            <div className="space-y-2">
+              {["lecture", "assignment", "practice"].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedActivity(type)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition capitalize ${
+                    selectedActivity === type
+                      ? "bg-blue-600/20 border-blue-500 text-blue-400"
+                      : "border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setActivityModal(null)}
+                className="flex-1 py-2 rounded-xl border border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmActivity}
+                className="flex-1 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

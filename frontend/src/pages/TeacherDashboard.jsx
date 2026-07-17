@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Mail, Search } from 'lucide-react';
+import { Users, Mail, Search, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../constants';
 import { Link } from 'react-router-dom';
@@ -27,7 +27,8 @@ export default function TeacherDashboard() {
         setFilteredStudents(studentData);
         setCourses(courseData);
         setIsLoading(false);
-      });
+      })
+      .catch(() => setIsLoading(false));
     }
   }, [user]);
 
@@ -95,6 +96,26 @@ export default function TeacherDashboard() {
           ))}
         </select>
 
+      </div>
+
+      {/* ===== COURSES SECTION ===== */}
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800">
+          <h3 className="font-bold flex items-center gap-2">
+            <BookOpen className="w-4 h-4" /> Courses
+          </h3>
+        </div>
+        <div className="p-4 flex flex-wrap gap-2">
+          {courses.map(course => (
+            <Link
+              key={course._id}
+              to={`/teacher/course/${course._id}`}
+              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium rounded-xl transition"
+            >
+              {course.course_name}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* ===== STUDENT LIST ===== */}

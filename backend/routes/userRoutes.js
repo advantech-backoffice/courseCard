@@ -174,7 +174,7 @@ router.post("/assign-student", async (req, res) => {
 
 // Mark topic completed
 router.post('/student/complete-topic', async (req, res) => {
-  const { userId, courseId, moduleId, topicName } = req.body;
+  const { userId, courseId, moduleId, topicName, activityType } = req.body;
 
   try {
     const user = await User.findById(userId);
@@ -214,7 +214,8 @@ router.post('/student/complete-topic', async (req, res) => {
     if (!progressEntry.completedTopics.some(t => t.topicKey === topicKey)) {
       progressEntry.completedTopics.push({
         topicKey,
-        completedAt: new Date()
+        completedAt: new Date(),
+        activityType: activityType || "lecture"
       });
     }
 

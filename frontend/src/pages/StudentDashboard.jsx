@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, ArrowRight, CheckCircle2, Clock } from "lucide-react";
+import { BookOpen, ArrowRight, CheckCircle2, Clock, ExternalLink, AlertCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../constants";
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
 
   const [courses, setCourses] = useState([]);
   const [userData, setUserData] = useState([]);
@@ -13,30 +13,38 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (user) {
-      fetch(`${API_BASE_URL}/users/student/${user._id}`)
+      authFetch(`${API_BASE_URL}/users/student/${user._id}`)
         .then((res) => res.json())
         .then((data) => {
-          setCourses(data.courseData);
+          setCourses(data.courseData || []);
           setUserData(data.studentData);
-          let courseProgress = data.studentData.progress.find(
-            (p) => p.courseId.toString() === data.courseData[0]._id.toString(),
-          );
-          console.log(data);
           setIsLoading(false);
-        });
+        })
+        .catch(() => setIsLoading(false));
     }
-  }, [user]);
+  }, [user, authFetch]);
 
   return (
     <div className="space-y-8">
       {/* HEADER */}
-      <div>
-        <h2 className="text-3xl font-bold">
-          Hello, {user?.username?.split(" ")[0] || 'Learner'}!
-        </h2>
-        <p className="text-zinc-500 mt-1">
-          Ready to continue your learning journey?
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold">
+            Hello, {user?.username?.split(" ")[0] || 'Learner'}!
+          </h2>
+          <p className="text-zinc-500 mt-1">
+            Ready to continue your learning journey?
+          </p>
+        </div>
+        <a
+          href="https://master2013.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition w-fit"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Assignments
+        </a>
       </div>
 
       {/* COURSE GRID */}
@@ -95,7 +103,7 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
-                  <div style={{ width: `${course.progress}%` }} className="bg-blue-600 h-3 transition-all duration-500" />
+                  <div style={{ width: `${course.progress}%` }} className="bg-blue-600 h-2 transition-all duration-500" />
                 </div>
               </div>
 

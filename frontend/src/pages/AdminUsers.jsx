@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, Mail, Shield, X, Upload } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Upload, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
 export default function AdminUsers() {
@@ -18,94 +18,108 @@ export default function AdminUsers() {
     role: ''
   });
 
+  const [toast, setToast] = useState(null);
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
-  // 🔄 Load Users
-  const fetchUsers = () => {
-    fetch(`${API_BASE_URL}/users`)
-      .then(res => res.json())
-      .then(data => {
-        data = data.filter((user)=>{return user.role != "admin"})
-        setUsers(data);
-        setIsLoading(false);
-      });
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/users`);
+      const data = await res.json();
+      setUsers(data.filter((user) => user.role !== "admin"));
+    } catch (err) {
+      showToast('error', 'Failed to load users');
+    }
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // 🔎 Filter Users
   const filteredUsers = users.filter(user =>
     (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // 📝 Handle Form Change
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ➕ ADD USER
   const handleAddUser = async () => {
-    console.log(formData);
-    
     if (!formData.username || !formData.email || !formData.password || !formData.role) {
-      alert('Please fill out all fields, including role.');
+      showToast('error', 'Please fill out all fields, including role.');
       return;
     }
 
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-    if (res.ok) {
-      fetchUsers();
-      setShowAddModal(false);
-      setFormData({ username: '', email: '', password: '', role: '' });
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      alert(`Error creating user: ${errorData.message || 'Unknown error'}`);
+      if (res.ok) {
+        fetchUsers();
+        setShowAddModal(false);
+        setFormData({ username: '', email: '', password: '', role: '' });
+        showToast('success', 'User created successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        showToast('error', `Error: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      showToast('error', 'Failed to create user');
     }
   };
 
-  // ✏️ EDIT USER
   const handleEditUser = async () => {
-    if (!formData.username || !formData.email || !formData.role) {
-      alert('Please fill out name, email, and role.');
+    if (!formData.username || !formData.email) {
+      showToast('error', 'Please fill out name and email.');
       return;
     }
 
-    const res = await fetch(`${API_BASE_URL}/users/${editingUser._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${editingUser._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-    if (res.ok) {
-      fetchUsers();
-      setEditingUser(null);
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      alert(`Error updating user: ${errorData.message || 'Unknown error'}`);
+      if (res.ok) {
+        fetchUsers();
+        setEditingUser(null);
+        showToast('success', 'User updated successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        showToast('error', `Error: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      showToast('error', 'Failed to update user');
     }
   };
 
-  // ❌ DELETE USER
-  const handleDelete = async id => {
-    if (!window.confirm('Delete this user?')) return;
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return;
 
-    await fetch(`${API_BASE_URL}/users/${id}`, {
-      method: 'DELETE'
-    });
-
-    fetchUsers();
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchUsers();
+        showToast('success', 'User deleted');
+      } else {
+        showToast('error', 'Failed to delete user');
+      }
+    } catch (err) {
+      showToast('error', 'Failed to delete user');
+    }
   };
 
-  // 🎯 Open Edit Modal
   const openEditModal = user => {
     setEditingUser(user);
     setFormData({
@@ -116,7 +130,6 @@ export default function AdminUsers() {
     });
   };
 
-  // 📂 Bulk Upload Students
   const handleBulkUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -136,15 +149,15 @@ export default function AdminUsers() {
       if (res.ok) {
         let msg = data.message;
         if (data.errors && data.errors.length > 0) {
-          msg += "\n\nWarnings:\n" + data.errors.join("\n");
+          msg += " Warnings: " + data.errors.join("; ");
         }
-        alert(msg);
+        showToast('success', msg);
         fetchUsers();
       } else {
-        alert(`Error: ${data.message}`);
+        showToast('error', data.message || 'Upload failed');
       }
     } catch (err) {
-      alert("Upload failed: " + err.message);
+      showToast('error', 'Upload failed: ' + err.message);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -154,94 +167,111 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
 
-      {/* 🔍 Search + Add Button */}
-      <div className="flex justify-between">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-20 right-8 z-50">
+          <div className={`px-6 py-4 rounded-2xl shadow-2xl border flex items-center space-x-3 ${
+            toast.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400'
+              : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
+          }`}>
+            {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <span className="font-medium text-sm">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Search + Add Button */}
+      <div className="flex justify-between items-center gap-4">
         <input
           type="text"
           placeholder="Search users..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="border p-3 rounded-xl w-72"
+          className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 rounded-xl w-72 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
         />
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl"
-        >
-          <Plus className="mr-2" /> Add User
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition font-medium"
+          >
+            <Plus className="mr-2 w-4 h-4" /> Add User
+          </button>
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept=".xlsx,.xls"
-          onChange={handleBulkUpload}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current.click()}
-          disabled={uploading}
-          className="flex items-center px-6 py-3 bg-green-600 text-white rounded-xl disabled:opacity-50"
-        >
-          <Upload className="mr-2" /> {uploading ? "Uploading..." : "Bulk Upload Excel"}
-        </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".xlsx,.xls"
+            onChange={handleBulkUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current.click()}
+            disabled={uploading}
+            className="flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl disabled:opacity-50 transition font-medium"
+          >
+            <Upload className="mr-2 w-4 h-4" /> {uploading ? "Uploading..." : "Bulk Upload Excel"}
+          </button>
+        </div>
       </div>
 
-      {/* 📋 Users Table */}
-      <table className="w-full dark:border-zinc-800 dark:bg-zinc-900 rounded-xl shadow">
-        <thead>
-          <tr className="border-b dark:border-zinc-800">
-            <th className="p-4 text-left">User</th>
-            <th className="p-4">Role</th>
-            <th className="p-4 text-right">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {isLoading ? (
-            <tr><td className="p-6">Loading...</td></tr>
-          ) : filteredUsers.length == 0 ?
-             <tr className="border-b dark:border-zinc-800">
-
-              <td className="p-4" colSpan={3}>
-                No Records
-              </td>
+      {/* Users Table */}
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-zinc-200 dark:border-zinc-800">
+              <th className="p-4 text-left text-xs font-semibold text-zinc-500 uppercase">User</th>
+              <th className="p-4 text-center text-xs font-semibold text-zinc-500 uppercase">Role</th>
+              <th className="p-4 text-right text-xs font-semibold text-zinc-500 uppercase">Actions</th>
             </tr>
-          :
-          filteredUsers.map(user => (
-            <tr key={user._id} className="border-b dark:border-zinc-800">
+          </thead>
 
-              <td className="p-4">
-                <p className="font-semibold">{user.username}</p>
-                <p className="text-sm text-gray-500">{user.email}</p>
-              </td>
+          <tbody>
+            {isLoading ? (
+              <tr><td className="p-6 text-zinc-500" colSpan={3}>Loading...</td></tr>
+            ) : filteredUsers.length === 0 ? (
+              <tr>
+                <td className="p-6 text-zinc-500 text-center" colSpan={3}>No users found</td>
+              </tr>
+            ) : (
+              filteredUsers.map(user => (
+                <tr key={user._id} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition">
+                  <td className="p-4">
+                    <p className="font-semibold">{user.username}</p>
+                    <p className="text-sm text-zinc-500">{user.email}</p>
+                  </td>
 
-              <td className="p-4 text-center">{user.role}</td>
+                  <td className="p-4 text-center">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 capitalize">
+                      {user.role}
+                    </span>
+                  </td>
 
-              <td className="p-4 text-right space-x-2">
-                <button
-                  onClick={() => openEditModal(user)}
-                  className="p-2 bg-blue-500 rounded"
-                >
-                  <Edit2 size={16} />
-                </button>
+                  <td className="p-4 text-right space-x-2">
+                    <button
+                      onClick={() => openEditModal(user)}
+                      className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition-colors"
+                    >
+                      <Edit2 size={16} />
+                    </button>
 
-                <button
-                  onClick={() => handleDelete(user._id)}
-                  className="p-2 bg-red-500 rounded"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </td>
+                    <button
+                      onClick={() => handleDelete(user._id, user.username)}
+                      className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-            </tr>
-          ))
-        }
-        </tbody>
-      </table>
-
-      {/* ================= ADD MODAL ================= */}
-
+      {/* ADD MODAL */}
       {showAddModal && (
         <Modal
           title="Add New User"
@@ -253,8 +283,7 @@ export default function AdminUsers() {
         />
       )}
 
-      {/* ================= EDIT MODAL ================= */}
-
+      {/* EDIT MODAL */}
       {editingUser && (
         <Modal
           title="Edit User"
@@ -269,18 +298,14 @@ export default function AdminUsers() {
   );
 }
 
-/* ================= REUSABLE MODAL COMPONENT ================= */
-
 function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword }) {
-
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-      <div className="bg-blue-950 p-8 rounded-2xl w-96 space-y-4">
+      <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl w-96 space-y-4 border border-zinc-200 dark:border-zinc-800 shadow-2xl">
 
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">{title}</h2>
-          <button onClick={onClose}><X /></button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition"><X className="w-5 h-5" /></button>
         </div>
 
         <input
@@ -288,15 +313,16 @@ function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword 
           placeholder="Username"
           value={formData.username}
           onChange={handleChange}
-          className="w-full border p-3 rounded-lg"
+          className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none transition"
         />
 
         <input
           name="email"
+          type="email"
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
-          className="w-full border p-3 rounded-lg"
+          className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none transition"
         />
 
         {showPassword && (
@@ -306,54 +332,29 @@ function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword 
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
+            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none transition"
           />
         )}
 
-        <div className="w-full border p-3 rounded-lg">
-          <div className="text-sm font-medium mb-2">Select Role</div>
-          <div className="flex items-center space-x-4">
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                name="role"
-                value="student"
-                checked={formData.role === 'student'}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="ml-2">Student</span>
-            </label>
-
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                name="role"
-                value="teacher"
-                checked={formData.role === 'teacher'}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="ml-2">Teacher</span>
-            </label>
-
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                name="role"
-                value="admin"
-                checked={formData.role === 'admin'}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="ml-2">Admin</span>
-            </label>
+        {showPassword && (
+          <div className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg">
+            <div className="text-sm font-medium mb-2 text-zinc-700 dark:text-zinc-300">Select Role</div>
+            <div className="flex items-center space-x-4">
+              <label className="inline-flex items-center cursor-pointer">
+                <input type="radio" name="role" value="student" checked={formData.role === 'student'} onChange={handleChange} className="w-4 h-4" />
+                <span className="ml-2 text-zinc-700 dark:text-zinc-300">Student</span>
+              </label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input type="radio" name="role" value="teacher" checked={formData.role === 'teacher'} onChange={handleChange} className="w-4 h-4" />
+                <span className="ml-2 text-zinc-700 dark:text-zinc-300">Teacher</span>
+              </label>
+            </div>
           </div>
-        </div>
+        )}
 
         <button
           onClick={onSubmit}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition font-medium"
         >
           Save
         </button>

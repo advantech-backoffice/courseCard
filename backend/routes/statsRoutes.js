@@ -224,4 +224,238 @@ router.get('/pending-exams/export', async (req, res) => {
   }
 });
 
+router.get('/daily-report', async (req, res) => {
+  try {
+    const students = await User.find({ role: 'student' }).select('-password');
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const present = [];
+    const absent = [];
+
+    for (const student of students) {
+      let todayActivity = null;
+
+      for (const prog of student.progress) {
+        for (const topic of prog.completedTopics) {
+          if (topic.completedAt >= todayStart && topic.completedAt <= todayEnd) {
+            todayActivity = {
+              topicKey: topic.topicKey,
+              activityType: topic.activityType || "lecture",
+              completedAt: topic.completedAt
+            };
+            break;
+          }
+        }
+        if (todayActivity) break;
+      }
+
+      if (todayActivity) {
+        present.push({
+          _id: student._id,
+          username: student.username,
+          email: student.email,
+          topicKey: todayActivity.topicKey,
+          activityType: todayActivity.activityType,
+          completedAt: todayActivity.completedAt
+        });
+      } else {
+        absent.push({
+          _id: student._id,
+          username: student.username,
+          email: student.email
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        date: todayStart.toISOString().split('T')[0],
+        presentCount: present.length,
+        absentCount: absent.length,
+        present,
+        absent
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Report 2: Today's full activity (all topic completions today)
+router.get('/today-activity', async (req, res) => {
+  try {
+    const students = await User.find({ role: 'student' }).select('-password');
+    const courses = await Course.find();
+    const courseMap = {};
+    courses.forEach(c => { courseMap[c._id.toString()] = c.course_name; });
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const activities = [];
+
+    for (const student of students) {
+      for (const prog of student.progress) {
+        for (const topic of prog.completedTopics) {
+          if (topic.completedAt >= todayStart && topic.completedAt <= todayEnd) {
+            activities.push({
+              username: student.username,
+              email: student.email,
+              course: courseMap[prog.courseId.toString()] || "Unknown",
+              topic: topic.topicKey,
+              activityType: topic.activityType || "lecture",
+              completedAt: topic.completedAt
+            });
+          }
+        }
+      }
+    }
+
+    activities.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+    res.json({
+      success: true,
+      data: {
+        date: todayStart.toISOString().split('T')[0],
+        count: activities.length,
+        activities
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Report 3: Faculty-wise student daily record
+router.get('/faculty-daily', async (req, res) => {
+  try {
+    const teachers = await User.find({ role: 'teacher' }).select('-password');
+    const students = await User.find({ role: 'student' }).select('-password');
+    const courses = await Course.find();
+    const courseMap = {};
+    courses.forEach(c => { courseMap[c._id.toString()] = c.course_name; });
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const studentMap = {};
+    students.forEach(s => { studentMap[s._id.toString()] = s; });
+
+    const facultyData = [];
+
+    for (const teacher of teachers) {
+      const studentRecords = [];
+
+      for (const sId of teacher.assignedStudents) {
+        const student = studentMap[sId.toString()];
+        if (!student) continue;
+
+        let todayActivity = null;
+        for (const prog of student.progress) {
+          for (const topic of prog.completedTopics) {
+            if (topic.completedAt >= todayStart && topic.completedAt <= todayEnd) {
+              todayActivity = {
+                course: courseMap[prog.courseId.toString()] || "Unknown",
+                topic: topic.topicKey,
+                activityType: topic.activityType || "lecture",
+                completedAt: topic.completedAt
+              };
+              break;
+            }
+          }
+          if (todayActivity) break;
+        }
+
+        studentRecords.push({
+          username: student.username,
+          email: student.email,
+          status: todayActivity ? "Present" : "Absent",
+          course: todayActivity?.course || "-",
+          topic: todayActivity?.topic || "-",
+          activityType: todayActivity?.activityType || "-",
+          completedAt: todayActivity?.completedAt || null
+        });
+      }
+
+      facultyData.push({
+        teacherId: teacher._id,
+        teacherName: teacher.username,
+        totalStudents: studentRecords.length,
+        presentCount: studentRecords.filter(s => s.status === "Present").length,
+        absentCount: studentRecords.filter(s => s.status === "Absent").length,
+        students: studentRecords
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        date: todayStart.toISOString().split('T')[0],
+        faculty: facultyData
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Report 4: Student overall activity report
+router.get('/student-overall-activity', async (req, res) => {
+  try {
+    const students = await User.find({ role: 'student' }).select('-password');
+    const courses = await Course.find();
+    const courseMap = {};
+    courses.forEach(c => { courseMap[c._id.toString()] = c.course_name; });
+
+    const studentData = [];
+
+    for (const student of students) {
+      const activities = [];
+
+      for (const prog of student.progress) {
+        const courseName = courseMap[prog.courseId.toString()] || "Unknown";
+        for (const topic of prog.completedTopics) {
+          activities.push({
+            course: courseName,
+            topic: topic.topicKey,
+            activityType: topic.activityType || "lecture",
+            completedAt: topic.completedAt
+          });
+        }
+      }
+
+      activities.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+      studentData.push({
+        username: student.username,
+        email: student.email,
+        totalActivities: activities.length,
+        activities
+      });
+    }
+
+    studentData.sort((a, b) => b.totalActivities - a.totalActivities);
+
+    res.json({
+      success: true,
+      data: studentData
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;

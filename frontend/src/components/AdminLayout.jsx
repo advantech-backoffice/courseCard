@@ -10,7 +10,8 @@ import {
   Moon,
   ChevronRight,
   ClipboardList,
-  CheckCircle
+  CheckCircle,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -35,6 +36,7 @@ export default function AdminLayout() {
     { icon: UserPlus, label: 'Assign', path: '/admin/assign' },
     { icon: ClipboardList, label: 'Pending Exams', path: '/admin/pending-exams' },
     { icon: CheckCircle, label: 'Completed Exams', path: '/admin/completed-exams' },
+    { icon: FileText, label: 'Reports', path: '/admin/reports' },
   ];
 
   const handleLogout = () => {

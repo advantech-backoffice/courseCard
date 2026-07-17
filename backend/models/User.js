@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema(
         completedTopics: [
           {
             topicKey: { type: String, required: true }, // e.g. "moduleId-topicName"
-            completedAt: { type: Date, default: Date.now }
+            completedAt: { type: Date, default: Date.now },
+            activityType: { type: String, enum: ["lecture", "assignment", "practice"], default: "lecture" }
           }
         ],
         progressPercentage: { type: Number, default: 0 },

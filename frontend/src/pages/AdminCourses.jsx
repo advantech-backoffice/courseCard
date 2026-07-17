@@ -7,7 +7,6 @@ import {
   Layers,
   Edit2,
   Trash2,
-  ExternalLink,
   FileUp,
   CheckCircle2,
   AlertCircle,
@@ -32,7 +31,6 @@ export default function AdminCourses() {
       .then((data) => {
         setCourses(data);
         setIsLoading(false);
-        console.log("courses",data);
       });
   };
 

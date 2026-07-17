@@ -10,11 +10,14 @@ import AdminUsers from './pages/AdminUsers';
 import AdminCourses from './pages/AdminCourses';
 import AdminAssign from './pages/AdminAssign';
 import TeacherDashboard from './pages/TeacherDashboard';
+import TeacherCourseDetail from './pages/TeacherCourseDetail';
 import StudentDashboard from './pages/StudentDashboard';
 import CourseDetail from './pages/CourseDetail';
 import TeacherStudentDetail from './pages/TeacherStudentsDetail';
 import AdminPendingExams from './pages/AdminPendingExams';
 import AdminCompletedExams from './pages/AdminCompletedExams';
+import AdminReports from './pages/AdminReports';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -40,6 +43,7 @@ export default function App() {
               <Route path="assign" element={<AdminAssign />} />
               <Route path="pending-exams" element={<AdminPendingExams />} />
               <Route path="completed-exams" element={<AdminCompletedExams />} />
+              <Route path="reports" element={<AdminReports />} />
             </Route>
 
             <Route path="/teacher" element={
@@ -49,7 +53,8 @@ export default function App() {
             }>
               <Route index element={<Navigate to="/teacher/dashboard" replace />} />
               <Route path="dashboard" element={<TeacherDashboard />} />
-              <Route path="/teacher/student/:id" element={<TeacherStudentDetail />} />
+              <Route path="course/:id" element={<TeacherCourseDetail />} />
+              <Route path="student/:id" element={<TeacherStudentDetail />} />
             </Route>
 
             <Route path="/student" element={
@@ -62,7 +67,7 @@ export default function App() {
               <Route path="course/:id" element={<CourseDetail />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

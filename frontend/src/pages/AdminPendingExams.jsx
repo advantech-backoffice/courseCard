@@ -6,6 +6,7 @@ export default function AdminPendingExams() {
   const [pendingExams, setPendingExams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [markingIds, setMarkingIds] = useState(new Set());
 
   useEffect(() => {
     async function fetchData() {
@@ -24,6 +25,10 @@ export default function AdminPendingExams() {
   }, []);
 
   const markExamDone = async (userId, courseId) => {
+    const key = `${userId}-${courseId}`;
+    if (markingIds.has(key)) return;
+    setMarkingIds(prev => new Set([...prev, key]));
+
     try {
       const res = await fetch(`${API_BASE_URL}/stats/mark-exam-done`, {
         method: "POST",
@@ -37,6 +42,11 @@ export default function AdminPendingExams() {
     } catch (err) {
       console.error(err);
     }
+    setMarkingIds(prev => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   };
 
   const handleExport = () => {
@@ -96,9 +106,10 @@ export default function AdminPendingExams() {
                 </div>
                 <button
                   onClick={() => markExamDone(exam.userId, exam.courseId)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                  disabled={markingIds.has(`${exam.userId}-${exam.courseId}`)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
                 >
-                  Mark Done
+                  {markingIds.has(`${exam.userId}-${exam.courseId}`) ? "Marking..." : "Mark Done"}
                 </button>
               </div>
             ))

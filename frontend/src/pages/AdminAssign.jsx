@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { UserPlus, GraduationCap, CheckCircle2, Search, ChevronDown, Check, X } from "lucide-react";
 import { API_BASE_URL } from "../constants";
 
@@ -130,6 +130,7 @@ export default function AdminAssign() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(null);
 
   // Form states
   const [selectedStudentForCourse, setSelectedStudentForCourse] = useState("");
@@ -173,10 +174,14 @@ export default function AdminAssign() {
         setTimeout(() => setSuccess(false), 3000);
         setSelectedStudentForCourse("");
         setSelectedCourses([]);
-        fetchData(); // Refresh to update assigned values
+        fetchData();
+      } else {
+        setError("Failed to enroll student");
+        setTimeout(() => setError(null), 4000);
       }
     } catch (err) {
-      console.error(err);
+      setError("Network error: " + err.message);
+      setTimeout(() => setError(null), 4000);
     } finally {
       setIsSubmitting(false);
     }
@@ -203,10 +208,14 @@ export default function AdminAssign() {
         setTimeout(() => setSuccess(false), 3000);
         setSelectedTeacher("");
         setSelectedStudentsForTeacher([]);
-        fetchData(); // Refresh to update assigned values
+        fetchData();
+      } else {
+        setError("Failed to assign students");
+        setTimeout(() => setError(null), 4000);
       }
     } catch (err) {
-      console.error(err);
+      setError("Network error: " + err.message);
+      setTimeout(() => setError(null), 4000);
     }
 
     setIsSubmitting(false);
@@ -236,13 +245,6 @@ export default function AdminAssign() {
 
   return (
     <div className="space-y-8 pb-32">
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; }
-      `}} />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-center mb-8">
@@ -355,8 +357,16 @@ export default function AdminAssign() {
         </div>
       </div>
 
+      {error && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <div className="bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-semibold">
+            {error}
+          </div>
+        </div>
+      )}
+
       {success && (
-        <div className="fixed bottom-8 right-8 animate-bounce z-50">
+        <div className="fixed bottom-8 right-8 z-50">
           <div className="bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-semibold">
             <div className="bg-white/20 p-1 rounded-full">
               <CheckCircle2 className="w-5 h-5" />
