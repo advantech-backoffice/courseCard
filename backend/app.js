@@ -10,11 +10,14 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
-
-dotenv.config();
+import leaveRoutes from './routes/leaveRoutes.js';
+import noticeRoutes from './routes/noticeRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--prod');
 
@@ -25,7 +28,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 
 if (isProduction) {
   const frontendDist = path.join(__dirname, '../frontend/dist');
@@ -40,6 +43,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/notices', noticeRoutes);
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Hello from backend 🚀' });

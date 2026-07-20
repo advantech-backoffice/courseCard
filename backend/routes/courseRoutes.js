@@ -74,7 +74,12 @@ router.post('/upload-excel', upload.single('file'), async (req, res) => {
       if (content) {
         // Handle comma-separated topics or single topic per row
         const topics = String(content).split(/[;,]+/).map(t => t.trim()).filter(Boolean);
-        moduleEntry.module_content.push(...topics);
+        for (const t of topics) {
+          // Avoid duplicates by name
+          if (!moduleEntry.module_content.some(existing => (typeof existing === "string" ? existing : existing.name) === t)) {
+            moduleEntry.module_content.push({ name: t, assignmentLink: "" });
+          }
+        }
       }
     });
 
@@ -83,7 +88,13 @@ router.post('/upload-excel', upload.single('file'), async (req, res) => {
     // Remove duplicates within module_content
     coursesToInsert.forEach(course => {
       course.modules.forEach(mod => {
-        mod.module_content = [...new Set(mod.module_content)];
+        const seen = new Set();
+        mod.module_content = mod.module_content.filter(t => {
+          const name = typeof t === "string" ? t : t.name;
+          if (seen.has(name)) return false;
+          seen.add(name);
+          return true;
+        });
       });
     });
 
@@ -163,7 +174,7 @@ const updateCourseProgress = async (course) => {
     let progressEntry = user.progress.find(p => p.courseId.toString() === course._id.toString());
     // Only update students who haven't completed the course yet
     if (progressEntry && progressEntry.progressPercentage !== 100 && !progressEntry.examCompleted) {
-      progressEntry.progressPercentage = totalTopics ? Math.round((progressEntry.completedTopics.length / totalTopics) * 100) : 0;
+      progressEntry.progressPercentage = totalTopics ? Math.round((progressEntry.completedTopics.length / totalTopics) * 1000) / 10 : 0;
       if (progressEntry.progressPercentage > 100) progressEntry.progressPercentage = 100; // Cap at 100
       await user.save();
     }
@@ -172,25 +183,40 @@ const updateCourseProgress = async (course) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    const { course_name, course_description, modules, total_duration, endDate } = req.body;
+
+    let normalizedModules = modules;
+    if (modules) {
+      normalizedModules = modules.map(mod => ({
+        module_name: mod.module_name,
+        module_content: Course.normalizeTopics(mod.module_content)
+      }));
+    }
+
+    const updateData = {};
+    if (course_name !== undefined) updateData.course_name = course_name;
+    if (course_description !== undefined) updateData.course_description = course_description;
+    if (normalizedModules !== undefined) updateData.modules = normalizedModules;
+    if (total_duration !== undefined) updateData.total_duration = total_duration;
+    if (endDate !== undefined) updateData.endDate = endDate;
+
+    console.log("PUT updateData:", JSON.stringify(updateData, null, 2));
+
     const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
+      updateData,
+      { new: true }
     );
 
     if (!updatedCourse) {
-      return res.status(404).json({
-        message: "Course not found"
-      });
+      return res.status(404).json({ message: "Course not found" });
     }
 
     await updateCourseProgress(updatedCourse);
     res.json(updatedCourse);
 
   } catch (error) {
+    console.error("PUT /:id full error:", error.stack || error);
     res.status(500).json({
       message: "Update failed",
       error: error.message

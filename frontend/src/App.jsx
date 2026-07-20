@@ -17,60 +17,66 @@ import TeacherStudentDetail from './pages/TeacherStudentsDetail';
 import AdminPendingExams from './pages/AdminPendingExams';
 import AdminCompletedExams from './pages/AdminCompletedExams';
 import AdminReports from './pages/AdminReports';
+import AdminLeave from './pages/AdminLeave';
+import AdminNotices from './pages/AdminNotices';
+import StudentNotices from './pages/StudentNotices';
 import NotFound from './pages/NotFound';
 
 export default function App() {
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/student/login" replace />} />
-            
-            <Route path="/admin/login" element={<LoginPage role="admin" />} />
-            <Route path="/teacher/login" element={<LoginPage role="teacher" />} />
-            <Route path="/student/login" element={<LoginPage role="student" />} />
+ return (
+ <ThemeProvider>
+ <AuthProvider>
+ <BrowserRouter>
+ <Routes>
+ <Route path="/" element={<Navigate to="/student/login" replace />} />
+ 
+ <Route path="/admin/login" element={<LoginPage role="admin" />} />
+ <Route path="/teacher/login" element={<LoginPage role="teacher" />} />
+ <Route path="/student/login" element={<LoginPage role="student" />} />
 
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="courses" element={<AdminCourses />} />
-              <Route path="assign" element={<AdminAssign />} />
-              <Route path="pending-exams" element={<AdminPendingExams />} />
-              <Route path="completed-exams" element={<AdminCompletedExams />} />
-              <Route path="reports" element={<AdminReports />} />
-            </Route>
+ <Route path="/admin" element={
+ <ProtectedRoute allowedRoles={['admin']}>
+ <AdminLayout />
+ </ProtectedRoute>
+ }>
+ <Route index element={<Navigate to="/admin/dashboard" replace />} />
+ <Route path="dashboard" element={<AdminDashboard />} />
+ <Route path="users" element={<AdminUsers />} />
+ <Route path="courses" element={<AdminCourses />} />
+ <Route path="assign" element={<AdminAssign />} />
+ <Route path="pending-exams" element={<AdminPendingExams />} />
+ <Route path="completed-exams" element={<AdminCompletedExams />} />
+ <Route path="reports" element={<AdminReports />} />
+ <Route path="leave" element={<AdminLeave />} />
+ <Route path="notices" element={<AdminNotices />} />
+ </Route>
 
-            <Route path="/teacher" element={
-              <ProtectedRoute allowedRoles={['teacher']}>
-                <NavLayout role="teacher" />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/teacher/dashboard" replace />} />
-              <Route path="dashboard" element={<TeacherDashboard />} />
-              <Route path="course/:id" element={<TeacherCourseDetail />} />
-              <Route path="student/:id" element={<TeacherStudentDetail />} />
-            </Route>
+ <Route path="/teacher" element={
+ <ProtectedRoute allowedRoles={['teacher']}>
+ <NavLayout role="teacher" />
+ </ProtectedRoute>
+ }>
+ <Route index element={<Navigate to="/teacher/dashboard" replace />} />
+ <Route path="dashboard" element={<TeacherDashboard />} />
+ <Route path="course/:id" element={<TeacherCourseDetail />} />
+ <Route path="student/:id" element={<TeacherStudentDetail />} />
+ </Route>
 
-            <Route path="/student" element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <NavLayout role="student" />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/student/dashboard" replace />} />
-              <Route path="dashboard" element={<StudentDashboard />} />
-              <Route path="course/:id" element={<CourseDetail />} />
-            </Route>
+ <Route path="/student" element={
+ <ProtectedRoute allowedRoles={['student']}>
+ <NavLayout role="student" />
+ </ProtectedRoute>
+ }>
+ <Route index element={<Navigate to="/student/dashboard" replace />} />
+ <Route path="dashboard" element={<StudentDashboard />} />
+ <Route path="course/:id" element={<CourseDetail />} />
+ <Route path="notices" element={<StudentNotices />} />
+ </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
-  );
+ <Route path="*" element={<NotFound />} />
+ </Routes>
+ </BrowserRouter>
+ </AuthProvider>
+ </ThemeProvider>
+ );
 }

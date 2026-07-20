@@ -174,7 +174,7 @@ router.post("/assign-student", async (req, res) => {
 
 // Mark topic completed
 router.post('/student/complete-topic', async (req, res) => {
-  const { userId, courseId, moduleId, topicName, activityType } = req.body;
+  const { userId, courseId, moduleId, topicName } = req.body;
 
   try {
     const user = await User.findById(userId);
@@ -182,6 +182,10 @@ router.post('/student/complete-topic', async (req, res) => {
 
     if (!user || user.role !== 'student') {
       return res.status(404).json({ message: 'Student not found' });
+    }
+
+    if (user.isDiscontinued) {
+      return res.status(403).json({ message: 'Student account is discontinued' });
     }
 
     if (!course) {
@@ -198,6 +202,11 @@ router.post('/student/complete-topic', async (req, res) => {
       p => p.courseId.toString() === courseId
     );
 
+    // Block if course is already 100% complete
+    if (progressEntry && progressEntry.progressPercentage >= 100) {
+      return res.status(403).json({ message: 'Course is already completed. No changes are allowed.' });
+    }
+
     // If not exists, create new progress entry
     if (!progressEntry) {
       user.progress.push({
@@ -208,6 +217,21 @@ router.post('/student/complete-topic', async (req, res) => {
       progressEntry = user.progress[user.progress.length - 1];
     }
 
+    // Auto-detect activity type: if topic has an assignmentLink → "assignment", else → "lecture"
+    let detectedActivityType = "lecture";
+    for (const mod of course.modules) {
+      if (mod.module_name === moduleId || mod._id?.toString() === moduleId) {
+        const topic = mod.module_content.find(t => {
+          const name = typeof t === "string" ? t : t.name;
+          return name === topicName;
+        });
+        if (topic && typeof topic === "object" && topic.assignmentLink) {
+          detectedActivityType = "assignment";
+        }
+        break;
+      }
+    }
+
     const topicKey = `${moduleId}-${topicName}`;
 
     // Add topic only if not already completed
@@ -215,15 +239,15 @@ router.post('/student/complete-topic', async (req, res) => {
       progressEntry.completedTopics.push({
         topicKey,
         completedAt: new Date(),
-        activityType: activityType || "lecture"
+        activityType: detectedActivityType
       });
     }
 
     // Calculate new percentage
     const completedCount = progressEntry.completedTopics.length;
     progressEntry.progressPercentage = Math.round(
-      (completedCount / totalTopics) * 100
-    );
+      (completedCount / totalTopics) * 1000
+    ) / 10;
 
     await user.save();
 
@@ -236,7 +260,8 @@ router.post('/student/complete-topic', async (req, res) => {
     res.json({
       message: 'Topic marked as completed',
       progress: progressEntry.progressPercentage,
-      completedAt: topicCompletedAt
+      completedAt: topicCompletedAt,
+      activityType: detectedActivityType
     });
 
   } catch (error) {
@@ -335,7 +360,7 @@ router.get("/student/:id", async (req, res) => {
       );
 
       const completedTopicsCount = progressData?.completedTopics?.length || 0;
-      const progress = totalTopics ? Math.round((completedTopicsCount / totalTopics) * 100) : 0;
+      const progress = totalTopics ? Math.round((completedTopicsCount / totalTopics) * 1000) / 10 : 0;
       
       const isOverdue = progress < 100 && new Date(course.endDate) < new Date();
 
@@ -418,6 +443,98 @@ router.post("/student/:id/course/:courseId/start", async (req, res) => {
     await user.save();
 
     res.json({ message: "Course started successfully", startedAt: progress.startedAt });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+
+// Admin: mark entire course as complete for selected students
+router.post("/complete-course", async (req, res) => {
+  try {
+    const { studentIds, courseId } = req.body;
+
+    if (!studentIds?.length || !courseId) {
+      return res.status(400).json({ message: "studentIds and courseId are required" });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    let updated = 0;
+    for (const sid of studentIds) {
+      const student = await User.findById(sid);
+      if (!student || student.role !== "student") continue;
+      if (student.isDiscontinued) continue;
+
+      const allTopics = [];
+      for (const mod of course.modules) {
+        for (const topic of mod.module_content) {
+          const topicName = typeof topic === "string" ? topic : topic.name;
+          allTopics.push({
+            topicKey: `${mod.module_name}-${topicName}`,
+            completedAt: new Date(),
+            activityType: (typeof topic === "object" && topic.assignmentLink) ? "assignment" : "lecture"
+          });
+        }
+      }
+
+      let progressEntry = student.progress.find(
+        (p) => p.courseId.toString() === courseId
+      );
+
+      if (!progressEntry) {
+        student.progress.push({
+          courseId,
+          completedTopics: allTopics,
+          progressPercentage: 100,
+          examCompleted: true,
+          examCompletedAt: new Date(),
+          startedAt: new Date()
+        });
+      } else {
+        const existingKeys = new Set(
+          progressEntry.completedTopics.map((t) => t.topicKey)
+        );
+        for (const t of allTopics) {
+          if (!existingKeys.has(t.topicKey)) {
+            progressEntry.completedTopics.push(t);
+          }
+        }
+        progressEntry.progressPercentage = 100;
+        progressEntry.examCompleted = true;
+        if (!progressEntry.examCompletedAt) progressEntry.examCompletedAt = new Date();
+        if (!progressEntry.startedAt) progressEntry.startedAt = new Date();
+      }
+
+      await student.save();
+      updated++;
+    }
+
+    res.json({ message: `Course marked complete for ${updated} student(s)`, updated });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+
+// Admin: toggle discontinued status
+router.put("/:id/discontinued", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.isDiscontinued = !user.isDiscontinued;
+    if (user.isDiscontinued) {
+      user.discontinuationReason = req.body.reason || "";
+    } else {
+      user.discontinuationReason = "";
+    }
+    await user.save();
+
+    res.json({
+      message: user.isDiscontinued ? "Student discontinued" : "Student reactivated",
+      isDiscontinued: user.isDiscontinued,
+      discontinuationReason: user.discontinuationReason,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }

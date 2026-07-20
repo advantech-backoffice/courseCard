@@ -135,6 +135,8 @@ router.get('/exam-status', async (req, res) => {
             userId: student._id,
             username: student.username,
             email: student.email,
+            isDiscontinued: student.isDiscontinued || false,
+          discontinuationReason: student.discontinuationReason || "",
             courseId: p.courseId._id,
             course_name: p.courseId.course_name,
             completedAt: p.completedTopics[p.completedTopics.length - 1]?.completedAt || new Date(),
@@ -258,6 +260,8 @@ router.get('/daily-report', async (req, res) => {
           _id: student._id,
           username: student.username,
           email: student.email,
+          isDiscontinued: student.isDiscontinued || false,
+          discontinuationReason: student.discontinuationReason || "",
           topicKey: todayActivity.topicKey,
           activityType: todayActivity.activityType,
           completedAt: todayActivity.completedAt
@@ -266,7 +270,9 @@ router.get('/daily-report', async (req, res) => {
         absent.push({
           _id: student._id,
           username: student.username,
-          email: student.email
+          email: student.email,
+          isDiscontinued: student.isDiscontinued || false,
+          discontinuationReason: student.discontinuationReason || ""
         });
       }
     }
@@ -309,6 +315,8 @@ router.get('/today-activity', async (req, res) => {
             activities.push({
               username: student.username,
               email: student.email,
+              isDiscontinued: student.isDiscontinued || false,
+              discontinuationReason: student.discontinuationReason || "",
               course: courseMap[prog.courseId.toString()] || "Unknown",
               topic: topic.topicKey,
               activityType: topic.activityType || "lecture",
@@ -380,6 +388,8 @@ router.get('/faculty-daily', async (req, res) => {
         studentRecords.push({
           username: student.username,
           email: student.email,
+          isDiscontinued: student.isDiscontinued || false,
+          discontinuationReason: student.discontinuationReason || "",
           status: todayActivity ? "Present" : "Absent",
           course: todayActivity?.course || "-",
           topic: todayActivity?.topic || "-",
@@ -441,6 +451,8 @@ router.get('/student-overall-activity', async (req, res) => {
       studentData.push({
         username: student.username,
         email: student.email,
+        isDiscontinued: student.isDiscontinued || false,
+        discontinuationReason: student.discontinuationReason || "",
         totalActivities: activities.length,
         activities
       });

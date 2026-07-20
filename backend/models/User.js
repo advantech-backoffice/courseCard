@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema(
     },
     assignedCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
     assignedStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // For teachers
+    isDiscontinued: { type: Boolean, default: false },
+    discontinuationReason: { type: String, default: "" },
     progress: [
       {
         courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },

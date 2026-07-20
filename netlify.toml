@@ -3,9 +3,9 @@
   publish = "dist"
   command = "npm install && npm run build"
 
-# Redirect frontend API requests to the backend host.
-[[redirects]]
-  from = "/api/*"
-  to = "https://course-card-one.vercel.app/api/:splat"
-  status = 200
-  force = true
+# Production: Redirect frontend API requests to the backend host.
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://course-card-one.vercel.app/api/:splat"
+#   status = 200
+#   force = true
