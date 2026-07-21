@@ -31,6 +31,7 @@ export default function AdminCourses() {
  const [showCompleteModal, setShowCompleteModal] = useState(null); // course object or null
  const [allStudents, setAllStudents] = useState([]);
  const [selectedStudents, setSelectedStudents] = useState(new Set());
+ const [selectedModules, setSelectedModules] = useState(new Set());
  const [completing, setCompleting] = useState(false);
 
  const fetchCourses = () => {
@@ -50,6 +51,7 @@ export default function AdminCourses() {
  const openCompleteModal = (course) => {
   setShowCompleteModal(course);
   setSelectedStudents(new Set());
+  setSelectedModules(new Set());
   // Fetch all students
   fetch(`${API_BASE_URL}/users/students`)
    .then((res) => res.json())
@@ -103,6 +105,52 @@ export default function AdminCourses() {
   }
   setCompleting(false);
   setTimeout(() => setImportStatus(null), 4000);
+ };
+
+ const handleCompleteModules = async () => {
+  if (selectedStudents.size === 0 || selectedModules.size === 0) return;
+  setCompleting(true);
+  try {
+   const res = await fetch(`${API_BASE_URL}/users/complete-module`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+     studentIds: Array.from(selectedStudents),
+     courseId: showCompleteModal._id,
+     moduleNames: Array.from(selectedModules),
+    }),
+   });
+   const data = await res.json();
+   if (res.ok) {
+    setImportStatus({ type: "success", message: data.message });
+    setShowCompleteModal(null);
+   } else {
+    setImportStatus({ type: "error", message: data.message || "Failed" });
+   }
+  } catch {
+   setImportStatus({ type: "error", message: "Failed to mark modules complete" });
+  }
+  setCompleting(false);
+  setTimeout(() => setImportStatus(null), 4000);
+ };
+
+ const toggleModule = (name) => {
+  setSelectedModules(prev => {
+   const next = new Set(prev);
+   if (next.has(name)) next.delete(name);
+   else next.add(name);
+   return next;
+  });
+ };
+
+ const toggleAllModules = () => {
+  if (!showCompleteModal) return;
+  const allNames = showCompleteModal.modules.map(m => m.module_name);
+  if (selectedModules.size === allNames.length) {
+   setSelectedModules(new Set());
+  } else {
+   setSelectedModules(new Set(allNames));
+  }
  };
 
  const openEditModal = (course) => {
@@ -356,9 +404,9 @@ export default function AdminCourses() {
    {/* Mark Complete Modal */}
    {showCompleteModal && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-     <div className="bg-white rounded-3xl w-full max-w-lg p-6 shadow-2xl">
+     <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
-       <h2 className="text-xl font-bold">Mark Course Complete</h2>
+       <h2 className="text-xl font-bold">Mark Complete</h2>
        <button
         onClick={() => setShowCompleteModal(null)}
         className="text-zinc-400 hover:text-zinc-600 transition"
@@ -366,14 +414,51 @@ export default function AdminCourses() {
         <X className="w-5 h-5" />
        </button>
       </div>
-      <p className="text-sm text-zinc-500 mb-4">
-       Select students enrolled in <strong>{showCompleteModal.course_name}</strong> to mark the course as 100% complete.
-      </p>
 
+      {/* Module Selection */}
+      <div className="mb-5">
+       <p className="text-sm text-zinc-500 mb-3">
+        Select modules to complete for <strong>{showCompleteModal.course_name}</strong>
+       </p>
+       <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 rounded-xl mb-2">
+        <label className="flex items-center gap-2 cursor-pointer font-medium text-sm">
+         <input
+          type="checkbox"
+          checked={showCompleteModal.modules?.length > 0 && selectedModules.size === showCompleteModal.modules.length}
+          onChange={toggleAllModules}
+          className="w-4 h-4"
+         />
+         Select All Modules ({showCompleteModal.modules?.length || 0})
+        </label>
+        <span className="text-xs text-zinc-500">{selectedModules.size} selected</span>
+       </div>
+       <div className="max-h-40 overflow-y-auto space-y-1 border border-zinc-100 rounded-xl p-2">
+        {(showCompleteModal.modules || []).map((mod) => (
+         <label
+          key={mod._id || mod.module_name}
+          className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-zinc-50 cursor-pointer transition"
+         >
+          <div className="flex items-center gap-3">
+           <input
+            type="checkbox"
+            checked={selectedModules.has(mod.module_name)}
+            onChange={() => toggleModule(mod.module_name)}
+            className="w-4 h-4"
+           />
+           <span className="text-sm font-medium">{mod.module_name}</span>
+          </div>
+          <span className="text-xs text-zinc-400">{mod.module_content?.length || 0} topics</span>
+         </label>
+        ))}
+       </div>
+      </div>
+
+      {/* Student Selection */}
       {allStudents.length === 0 ? (
-       <div className="py-8 text-center text-zinc-400">No students enrolled in this course</div>
+       <div className="py-6 text-center text-zinc-400">No students enrolled in this course</div>
       ) : (
-       <>
+       <div className="mb-2">
+        <p className="text-sm text-zinc-500 mb-3">Select students</p>
         <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 rounded-xl mb-2">
          <label className="flex items-center gap-2 cursor-pointer font-medium text-sm">
           <input
@@ -386,12 +471,11 @@ export default function AdminCourses() {
          </label>
          <span className="text-xs text-zinc-500">{selectedStudents.size} selected</span>
         </div>
-
-        <div className="max-h-64 overflow-y-auto space-y-1 border border-zinc-100 rounded-xl p-2">
+        <div className="max-h-48 overflow-y-auto space-y-1 border border-zinc-100 rounded-xl p-2">
          {allStudents.map((student) => (
           <label
            key={student._id}
-           className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-50 cursor-pointer transition"
+           className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-50 cursor-pointer transition"
           >
            <input
             type="checkbox"
@@ -406,10 +490,11 @@ export default function AdminCourses() {
           </label>
          ))}
         </div>
-       </>
+       </div>
       )}
 
-      <div className="flex justify-end gap-3 mt-6">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-zinc-100">
        <button
         onClick={() => setShowCompleteModal(null)}
         className="px-4 py-2 rounded-xl border"
@@ -417,11 +502,18 @@ export default function AdminCourses() {
         Cancel
        </button>
        <button
+        onClick={handleCompleteModules}
+        disabled={selectedStudents.size === 0 || selectedModules.size === 0 || completing}
+        className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-50 transition font-medium"
+       >
+        {completing ? "Completing..." : `Complete Module(s) for ${selectedStudents.size} Student(s)`}
+       </button>
+       <button
         onClick={handleCompleteCourse}
         disabled={selectedStudents.size === 0 || completing}
         className="px-4 py-2 rounded-xl bg-emerald-600 text-white disabled:opacity-50 transition font-medium"
        >
-        {completing ? "Completing..." : `Complete for ${selectedStudents.size} Student(s)`}
+        {completing ? "Completing..." : `Complete Entire Course for ${selectedStudents.size} Student(s)`}
        </button>
       </div>
      </div>

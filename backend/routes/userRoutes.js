@@ -314,7 +314,8 @@ router.get("/student/:id/courses", async (req, res) => {
       return {
         ...course.toObject(),
         isOverdue,
-        progress: progress ? progress.progressPercentage : 0
+        progress: progress ? progress.progressPercentage : 0,
+        completedTopics: progress ? progress.completedTopics : []
       };
     });
 
@@ -511,6 +512,74 @@ router.post("/complete-course", async (req, res) => {
     }
 
     res.json({ message: `Course marked complete for ${updated} student(s)`, updated });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+
+// Admin: mark specific modules as complete for selected students
+router.post("/complete-module", async (req, res) => {
+  try {
+    const { studentIds, courseId, moduleNames } = req.body;
+
+    if (!studentIds?.length || !courseId || !moduleNames?.length) {
+      return res.status(400).json({ message: "studentIds, courseId, and moduleNames are required" });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    const totalTopics = course.modules.reduce((acc, mod) => acc + (mod.module_content ? mod.module_content.length : 0), 0);
+
+    let updated = 0;
+    for (const sid of studentIds) {
+      const student = await User.findById(sid);
+      if (!student || student.role !== "student") continue;
+      if (student.isDiscontinued) continue;
+
+      const moduleTopics = [];
+      for (const mod of course.modules) {
+        if (!moduleNames.includes(mod.module_name)) continue;
+        for (const topic of mod.module_content) {
+          const topicName = typeof topic === "string" ? topic : topic.name;
+          moduleTopics.push({
+            topicKey: `${mod.module_name}-${topicName}`,
+            completedAt: new Date(),
+            activityType: (typeof topic === "object" && topic.assignmentLink) ? "assignment" : "lecture"
+          });
+        }
+      }
+
+      let progressEntry = student.progress.find(
+        (p) => p.courseId.toString() === courseId
+      );
+
+      if (!progressEntry) {
+        student.progress.push({
+          courseId,
+          completedTopics: moduleTopics,
+          progressPercentage: totalTopics ? Math.round((moduleTopics.length / totalTopics) * 1000) / 10 : 0,
+          startedAt: new Date()
+        });
+      } else {
+        const existingKeys = new Set(
+          progressEntry.completedTopics.map((t) => t.topicKey)
+        );
+        for (const t of moduleTopics) {
+          if (!existingKeys.has(t.topicKey)) {
+            progressEntry.completedTopics.push(t);
+          }
+        }
+        progressEntry.progressPercentage = totalTopics ? Math.round((progressEntry.completedTopics.length / totalTopics) * 1000) / 10 : 0;
+        if (progressEntry.progressPercentage > 100) progressEntry.progressPercentage = 100;
+        if (!progressEntry.startedAt) progressEntry.startedAt = new Date();
+      }
+
+      await student.save();
+      updated++;
+    }
+
+    res.json({ message: `Selected module(s) marked complete for ${updated} student(s)`, updated });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }

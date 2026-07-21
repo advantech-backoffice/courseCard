@@ -3,8 +3,6 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import authRoutes from '../routes/authRoutes.js';
 import userRoutes from '../routes/userRoutes.js';
@@ -15,26 +13,18 @@ import noticeRoutes from '../routes/noticeRoutes.js';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const app = express();
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 app.use(cors({
-  origin: isProduction ? true : 'http://localhost:5173',
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 
-// Serverless MongoDB connection middleware
 const connectDB = async () => {
-  if (mongoose.connections[0].readyState) {
-    return;
-  }
-
+  if (mongoose.connections[0].readyState) return;
   try {
     await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
     console.log("MongoDB connected");

@@ -32,6 +32,7 @@ export default function AdminUsers() {
  const [completeModalStudent, setCompleteModalStudent] = useState(null);
  const [studentCourses, setStudentCourses] = useState([]);
  const [completingCourse, setCompletingCourse] = useState(null);
+ const [expandedCourse, setExpandedCourse] = useState(null);
 
  // Discontinuation reason modal
  const [discontinueModalUser, setDiscontinueModalUser] = useState(null);
@@ -204,6 +205,30 @@ export default function AdminUsers() {
   setCompletingCourse(null);
  };
 
+ const handleMarkModuleComplete = async (courseId, moduleName) => {
+  setCompletingCourse(courseId + moduleName);
+  try {
+   const res = await fetch(`${API_BASE_URL}/users/complete-module`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentIds: [completeModalStudent._id], courseId, moduleNames: [moduleName] }),
+   });
+   const data = await res.json();
+   if (res.ok) {
+    showToast('success', data.message);
+    // Refresh courses
+    fetch(`${API_BASE_URL}/users/student/${completeModalStudent._id}/courses`)
+     .then(res => res.json())
+     .then(data => setStudentCourses(Array.isArray(data) ? data : []));
+   } else {
+    showToast('error', data.message || 'Failed');
+   }
+  } catch {
+   showToast('error', 'Failed to complete module');
+  }
+  setCompletingCourse(null);
+ };
+
  const openEditModal = user => {
   setEditingUser(user);
   setFormData({ username: user.username, email: user.email, password: '', role: user.role });
@@ -255,30 +280,67 @@ export default function AdminUsers() {
    {/* Complete Course Modal */}
    {completeModalStudent && (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-     <div className="bg-white p-6 rounded-2xl w-96 space-y-4 border border-zinc-200 shadow-2xl max-h-[80vh] overflow-y-auto">
+     <div className="bg-white p-6 rounded-2xl w-full max-w-lg space-y-4 border border-zinc-200 shadow-2xl max-h-[80vh] overflow-y-auto">
       <div className="flex justify-between items-center">
-       <h2 className="text-lg font-bold">Mark Course Complete</h2>
+       <h2 className="text-lg font-bold">Mark Complete</h2>
        <button onClick={() => setCompleteModalStudent(null)} className="text-zinc-400 hover:text-zinc-600 transition"><X className="w-5 h-5" /></button>
       </div>
-      <p className="text-sm text-zinc-500">Select a course for <strong>{completeModalStudent.username}</strong></p>
+      <p className="text-sm text-zinc-500">Select modules or entire courses for <strong>{completeModalStudent.username}</strong></p>
 
       {studentCourses.length === 0 ? (
        <p className="text-sm text-zinc-400 py-4 text-center">No courses enrolled</p>
       ) : (
-       <div className="space-y-2">
+       <div className="space-y-3">
         {studentCourses.map(course => (
-         <div key={course._id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-100">
-          <div className="flex-1 min-w-0">
-           <p className="text-sm font-medium truncate">{course.course_name}</p>
-           <p className="text-xs text-zinc-500">{course.progress || 0}% complete</p>
+         <div key={course._id} className="rounded-xl border border-zinc-100 overflow-hidden">
+          <div className="flex items-center justify-between p-3 bg-zinc-50">
+           <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{course.course_name}</p>
+            <p className="text-xs text-zinc-500">{course.progress || 0}% complete</p>
+           </div>
+           <div className="flex items-center gap-2">
+            <button
+             onClick={() => setExpandedCourse(expandedCourse === course._id ? null : course._id)}
+             className="px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
+            >
+             {expandedCourse === course._id ? "Hide Modules" : "Modules"}
+            </button>
+            <button
+             onClick={() => handleMarkCourseComplete(course._id)}
+             disabled={completingCourse === course._id || course.progress === 100}
+             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition"
+            >
+             {completingCourse === course._id ? "..." : course.progress === 100 ? "Done" : "Complete Course"}
+            </button>
+           </div>
           </div>
-          <button
-           onClick={() => handleMarkCourseComplete(course._id)}
-           disabled={completingCourse === course._id || course.progress === 100}
-           className="ml-3 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition"
-          >
-           {completingCourse === course._id ? "..." : course.progress === 100 ? "Done" : "Complete"}
-          </button>
+          {expandedCourse === course._id && course.modules && (
+           <div className="border-t border-zinc-100 p-2 space-y-1">
+            {course.modules.map((mod, i) => {
+             const totalTopics = mod.module_content?.length || 0;
+             const completedTopics = mod.module_content?.filter(t => {
+              const topicName = typeof t === "string" ? t : t.name;
+              return (course.completedTopics || []).some(ct => ct.topicKey === `${mod.module_name}-${topicName}`);
+             }).length || 0;
+             const isModuleComplete = totalTopics > 0 && completedTopics === totalTopics;
+             return (
+              <div key={mod._id || i} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-zinc-50 transition">
+               <div>
+                <p className="text-sm font-medium">{mod.module_name}</p>
+                <p className="text-xs text-zinc-400">{completedTopics}/{totalTopics} topics</p>
+               </div>
+               <button
+                onClick={() => handleMarkModuleComplete(course._id, mod.module_name)}
+                disabled={completingCourse === course._id + mod.module_name || isModuleComplete}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition"
+               >
+                {completingCourse === course._id + mod.module_name ? "..." : isModuleComplete ? "Done" : "Complete Module"}
+               </button>
+              </div>
+             );
+            })}
+           </div>
+          )}
          </div>
         ))}
        </div>
