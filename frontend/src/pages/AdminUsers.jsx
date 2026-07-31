@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, Upload, CheckCircle2, AlertCircle, X, CheckSquare, StopCircle, Filter, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Upload, Download, CheckCircle2, AlertCircle, X, CheckSquare, StopCircle, Filter, ArrowUpDown, ChevronDown } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
 export default function AdminUsers() {
@@ -444,6 +444,12 @@ export default function AdminUsers() {
       className="flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl disabled:opacity-50 transition font-medium"
      >
       <Upload className="mr-2 w-4 h-4" /> {uploading ? "Uploading..." : "Bulk Upload Excel"}
+     </button>
+     <button
+      onClick={() => window.open(`${API_BASE_URL}/users/export`, '_blank')}
+      className="flex items-center px-6 py-3 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl transition font-medium"
+     >
+      <Download className="mr-2 w-4 h-4" /> Export Users
      </button>
     </div>
    </div>

@@ -37,6 +37,36 @@ router.get("/teachers", async (req, res) => {
   }
 });
 
+// Export all users (username, email, password hash, role) to Excel
+router.get("/export", async (req, res) => {
+  try {
+    const users = await User.find().select("username email password role");
+
+    const exportData = users.map((u, i) => ({
+      "S.No": i + 1,
+      Username: u.username,
+      Email: u.email,
+      Password: u.password,
+      Role: u.role,
+    }));
+
+    const worksheet = xlsx.utils.json_to_sheet(exportData);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Users");
+
+    const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Disposition", 'attachment; filename="users.xlsx"');
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.send(buffer);
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+});
+
 // Bulk upload students via Excel
 router.post("/bulk-upload", upload.single("file"), async (req, res) => {
   try {
