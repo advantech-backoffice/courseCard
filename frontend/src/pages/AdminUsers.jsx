@@ -109,17 +109,19 @@ export default function AdminUsers() {
   }
  };
 
- const handleEditUser = async () => {
-  if (!formData.username || !formData.email) {
-   showToast('error', 'Please fill out name and email.');
-   return;
-  }
-  try {
-   const res = await fetch(`${API_BASE_URL}/users/${editingUser._id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData)
-   });
+  const handleEditUser = async () => {
+   if (!formData.username || !formData.email) {
+    showToast('error', 'Please fill out name and email.');
+    return;
+   }
+   try {
+    const payload = { ...formData };
+    if (!payload.password) delete payload.password;
+    const res = await fetch(`${API_BASE_URL}/users/${editingUser._id}`, {
+     method: 'PUT',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(payload)
+    });
    if (res.ok) {
     fetchUsers();
     setEditingUser(null);
@@ -554,13 +556,15 @@ export default function AdminUsers() {
      onSubmit={handleEditUser}
      formData={formData}
      handleChange={handleChange}
+     showPassword
+     passwordPlaceholder="New password (leave blank to keep current)"
     />
    )}
   </div>
  );
 }
 
-function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword }) {
+function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword, passwordPlaceholder }) {
  return (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
    <div className="bg-white p-8 rounded-2xl w-96 space-y-4 border border-zinc-200 shadow-2xl">
@@ -587,7 +591,7 @@ function Modal({ title, onClose, onSubmit, formData, handleChange, showPassword 
      <input
       type="password"
       name="password"
-      placeholder="Password"
+      placeholder={passwordPlaceholder || "Password"}
       value={formData.password}
       onChange={handleChange}
       className="w-full border border-zinc-200 bg-zinc-50 p-3 rounded-lg text-zinc-900 focus:ring-2 focus:ring-blue-600 outline-none transition"

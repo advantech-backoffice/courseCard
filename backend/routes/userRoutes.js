@@ -394,9 +394,44 @@ router.get("/teacher/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const { password, username, email, role, ...rest } = req.body;
+    const updateData = { ...rest };
+
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    if (role) updateData.role = role;
+
+    if (password && password.trim()) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    if (updateData.username) {
+      const existing = await User.findOne({
+        username: updateData.username,
+        _id: { $ne: req.params.id },
+      });
+      if (existing) {
+        return res.status(400).json({ message: "Username already in use" });
+      }
+    }
+
+    if (updateData.email) {
+      const existing = await User.findOne({
+        email: updateData.email,
+        _id: { $ne: req.params.id },
+      });
+      if (existing) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
+      runValidators: true,
     }).select("-password");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
